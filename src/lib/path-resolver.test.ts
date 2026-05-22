@@ -18,7 +18,7 @@ describe("resolveFilePath", () => {
 		expect(result.realPath).toBe(resolve("/mnt/data/subdir/file.txt"));
 	});
 
-	it("resolves root of mount when file is empty", async () => {
+	it("resolves root of mount when relativePath is empty", async () => {
 		const result = await firstValueFrom(resolveFilePath(MOUNTS, "data", ""));
 		expect(result.realPath).toBe(resolve("/mnt/data"));
 	});

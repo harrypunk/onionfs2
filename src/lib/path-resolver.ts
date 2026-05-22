@@ -13,13 +13,13 @@ export interface ResolvedPath {
  *
  * @param mounts   Configured mount map (logical name → absolute path).
  * @param mount    Logical mount name requested by the client.
- * @param file     Relative file path inside the mount.
+ * @param relativePath  Relative path inside the mount.
  * @returns        Observable that emits once with the resolved path.
  */
 export function resolveFilePath(
 	mounts: Record<string, string>,
 	mount: string,
-	file: string,
+	relativePath: string,
 ): Observable<ResolvedPath> {
 	if (!/^[a-zA-Z0-9]+$/.test(mount)) {
 		const err = new Error(`Invalid mount name: ${mount}`);
@@ -35,7 +35,7 @@ export function resolveFilePath(
 	}
 
 	const resolvedBase = resolve(basePath);
-	const realPath = resolve(resolvedBase, file);
+	const realPath = resolve(resolvedBase, relativePath);
 
 	// Security boundary: prevent directory traversal.
 	if (realPath !== resolvedBase && !realPath.startsWith(`${resolvedBase}/`)) {
@@ -44,5 +44,5 @@ export function resolveFilePath(
 		return throwError(() => err);
 	}
 
-	return of({ mount, relativePath: file, realPath });
+	return of({ mount, relativePath, realPath });
 }

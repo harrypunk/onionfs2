@@ -17,7 +17,7 @@ fsRoutes.use(validatePath);
 fsRoutes.use(resolvePath);
 
 /**
- * GET /fs/list?mount=<name>&file=<dir>
+ * GET /fs/list?mount=<name>&dir=<path>
  *
  * Lists the contents of a directory inside a mount.
  *
