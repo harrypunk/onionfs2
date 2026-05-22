@@ -85,9 +85,9 @@ curl "http://localhost:3000/fs/list?mount=nvme1&file=photos/2024"
 {
   "path": "/mnt/nvme1/photos/2024",
   "entries": [
-    { "name": "vacation.jpg", "type": "file" },
-    { "name": "thumbnails", "type": "directory" },
-    { "name": "broken-link", "type": "unknown" }
+    { "name": "vacation.jpg", "type": 2 },
+    { "name": "thumbnails", "type": 1 },
+    { "name": "broken-link", "type": 0 }
   ]
 }
 ```

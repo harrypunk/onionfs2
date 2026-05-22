@@ -3,10 +3,17 @@ import { join } from "node:path";
 import { forkJoin, Observable, of } from "rxjs";
 import { catchError, map, mergeMap } from "rxjs/operators";
 
+/** File-type bitmask enum. */
+export enum FileType {
+	Unknown = 0,
+	Directory = 1 << 0,
+	File = 1 << 1,
+}
+
 /** Metadata for a single file-system entry. */
 export interface DirEntry {
 	name: string;
-	type: "file" | "directory" | "unknown";
+	type: FileType;
 }
 
 /**
@@ -81,14 +88,12 @@ export function listDir(
 						(s) =>
 							({
 								name,
-								type: s.isDirectory() ? "directory" : "file",
+								type: s.isDirectory() ? FileType.Directory : FileType.File,
 							}) as DirEntry,
 					),
 					// Local error recovery: if stat fails (e.g. symlink broken),
 					// emit "unknown" instead of killing the whole forkJoin.
-					catchError(
-						() => of({ name, type: "unknown" }) as Observable<DirEntry>,
-					),
+					catchError(() => of({ name, type: 0 }) as Observable<DirEntry>),
 				),
 			);
 
