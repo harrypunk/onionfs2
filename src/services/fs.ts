@@ -14,6 +14,8 @@ export enum FileType {
 export interface DirEntry {
 	name: string;
 	type: FileType;
+	/** File size in bytes. Only present for {@link FileType.File} entries. */
+	size?: number;
 }
 
 /**
@@ -89,6 +91,7 @@ export function listDir(
 							({
 								name,
 								type: s.isDirectory() ? FileType.Directory : FileType.File,
+								size: s.isDirectory() ? undefined : s.size,
 							}) as DirEntry,
 					),
 					// Local error recovery: if stat fails (e.g. symlink broken),
