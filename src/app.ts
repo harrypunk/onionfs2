@@ -1,10 +1,11 @@
-import { type HonoLogLayerVariables, honoLogLayer } from "@loglayer/hono";
+import { honoLogLayer } from "@loglayer/hono";
 import { Hono } from "hono";
 import { from, lastValueFrom, throwError } from "rxjs";
 import { catchError, shareReplay, tap } from "rxjs/operators";
-import { type AppConfig, loadConfig } from "./config";
+import { loadConfig } from "./config";
 import { log } from "./logging";
 import fsRoutes from "./routes/fs";
+import type { Variables } from "./types";
 
 const config$ = from(loadConfig()).pipe(
 	tap((cfg) => {
@@ -16,10 +17,6 @@ const config$ = from(loadConfig()).pipe(
 	}),
 	shareReplay(1),
 );
-
-type Variables = {
-	config: AppConfig;
-} & HonoLogLayerVariables;
 
 const app = new Hono<{ Variables: Variables }>();
 

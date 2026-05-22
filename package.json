@@ -1,7 +1,8 @@
 {
 	"name": "onon-fs2",
 	"scripts": {
-		"dev": "LOG_LEVEL=debug bun run --hot src/index.ts"
+		"dev": "LOG_LEVEL=debug bun run --hot src/index.ts",
+		"test": "bun test"
 	},
 	"dependencies": {
 		"@loglayer/transport-pino": "^3.0.3",

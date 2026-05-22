@@ -1,29 +1,34 @@
 import { Hono } from "hono";
 import { firstValueFrom } from "rxjs";
+import { resolvePath } from "../middleware/resolve-path";
+import { validatePath } from "../middleware/validate-path";
 import { listDir } from "../services/fs";
+import type { Variables } from "../types";
+
+/** Extended variables available inside `/fs` routes after middleware runs. */
+type FsVariables = Variables & {
+	realPath: string;
+};
 
 /** Hono sub-router for file-system endpoints under `/fs`. */
-const fsRoutes = new Hono();
+const fsRoutes = new Hono<{ Variables: FsVariables }>();
+
+fsRoutes.use(validatePath);
+fsRoutes.use(resolvePath);
 
 /**
- * GET /fs/list?path=<dir>
+ * GET /fs/list?mount=<name>&file=<dir>
  *
- * Lists the contents of a directory, defaulting to the current working
- * directory when `path` is omitted.
+ * Lists the contents of a directory inside a mount.
  *
- * Errors from the underlying fs calls are mapped to appropriate HTTP status:
- * - 404: directory does not exist (ENOENT)
- * - 403: permission denied (EACCES / EPERM)
- * - 500: everything else
- *
- * The handler converts the cold Observable returned by `listDir` into a
- * Promise via `firstValueFrom`, then chains `.then` for success / error
- * responses without using async/await syntax.
+ * Validation and path resolution are handled upstream by middleware:
+ * - `validatePath` returns 400 for malformed mount/file params.
+ * - `resolvePath` returns 404/403 for missing mounts or path traversal.
  */
 fsRoutes.get("/list", (c) => {
-	const targetPath = c.req.query("path") ?? ".";
+	const realPath = c.var.realPath;
 
-	return firstValueFrom(listDir(targetPath)).then(
+	return firstValueFrom(listDir(realPath)).then(
 		(result) => c.json(result),
 		(err) => {
 			if (err.code === "ENOENT") {
