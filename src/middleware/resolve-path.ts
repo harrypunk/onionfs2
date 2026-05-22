@@ -1,7 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { firstValueFrom } from "rxjs";
-import { resolveFilePath } from "../lib/path-resolver";
-import type { Variables } from "../types";
+import { resolveFilePath } from "@/lib/path-resolver";
+import type { Variables } from "@/types";
 
 type ResolvePathVariables = Variables & {
 	realPath: string;

@@ -2,11 +2,11 @@ import { honoLogLayer } from "@loglayer/hono";
 import { Hono } from "hono";
 import { from, lastValueFrom, throwError } from "rxjs";
 import { catchError, shareReplay, tap } from "rxjs/operators";
-import { loadConfig } from "./config";
-import { log } from "./logging";
-import fsRoutes from "./routes/fs";
-import mountRoutes from "./routes/mount";
-import type { Variables } from "./types";
+import { loadConfig } from "@/config";
+import { log } from "@/logging";
+import fsRoutes from "@/routes/fs";
+import mountRoutes from "@/routes/mount";
+import type { Variables } from "@/types";
 
 const config$ = from(loadConfig()).pipe(
 	tap((cfg) => {

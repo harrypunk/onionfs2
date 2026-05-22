@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { Variables } from "../types";
+import type { Variables } from "@/types";
 
 /** Hono sub-router for mount-management endpoints under `/mount`. */
 const mountRoutes = new Hono<{ Variables: Variables }>();

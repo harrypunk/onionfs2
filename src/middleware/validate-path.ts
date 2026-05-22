@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import type { Variables } from "../types";
+import type { Variables } from "@/types";
 
 /**
  * Validates that `mount` and `file` query params conform to expected formats.

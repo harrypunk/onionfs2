@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { firstValueFrom } from "rxjs";
-import { resolvePath } from "../middleware/resolve-path";
-import { validatePath } from "../middleware/validate-path";
-import { listDir } from "../services/fs";
-import type { Variables } from "../types";
+import { resolvePath } from "@/middleware/resolve-path";
+import { validatePath } from "@/middleware/validate-path";
+import { listDir } from "@/services/fs";
+import type { Variables } from "@/types";
 
 /** Extended variables available inside `/fs` routes after middleware runs. */
 type FsVariables = Variables & {
