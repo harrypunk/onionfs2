@@ -1,4 +1,5 @@
 import { createMiddleware } from "hono/factory";
+import { validateRelativePath } from "@/lib/filepath-validate";
 import type { Variables } from "@/types";
 
 /**
@@ -20,22 +21,9 @@ export const validatePath = createMiddleware<{ Variables: Variables }>(
 			return c.json({ error: "Invalid mount name" }, 400);
 		}
 
-		const segmentPattern = /^[a-zA-Z][a-zA-Z0-9._-]*$/;
-		const validDir =
-			dir === "" ||
-			(new RegExp(
-				`^${segmentPattern.source}(/${segmentPattern.source})*/?$`,
-			).test(dir) &&
-				!dir.startsWith("/"));
-
-		if (!validDir) {
-			return c.json(
-				{
-					error:
-						"Invalid dir path: each segment must start with a letter and contain only alphanumeric chars, dots, hyphens, or underscores",
-				},
-				400,
-			);
+		const dirError = validateRelativePath(dir);
+		if (dirError) {
+			return c.json({ error: `Invalid dir path: ${dirError}` }, 400);
 		}
 
 		await next();
