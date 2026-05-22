@@ -1,0 +1,12 @@
+{
+	"bind_addr": "0.0.0.0:3001",
+	"nats_server": "nats.lan:4222",
+	"mounts": {
+		"data1": "/data1",
+		"nvme1": "/mnt/nvme1"
+	},
+	"node_id": "desktop3",
+	"cluster_url": "desktop3.svc.local",
+	"public_url": "agent1.lan:5001",
+	"announce_interval_sec": 300
+}
