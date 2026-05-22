@@ -4,10 +4,8 @@
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx",
 		"types": ["bun"],
-		"ignoreDeprecations": "6.0",
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"]
+			"@/*": ["./src/*"]
 		}
 	}
 }
