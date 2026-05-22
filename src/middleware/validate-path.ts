@@ -12,13 +12,16 @@ import type { Variables } from "../types";
 export const validatePath = createMiddleware<{ Variables: Variables }>(
 	async (c, next) => {
 		const mount = c.req.query("mount");
-		const file = c.req.query("file");
+		const file = c.req.query("file") ?? "";
 
 		if (!mount || !/^[a-zA-Z0-9]+$/.test(mount)) {
 			return c.json({ error: "Invalid mount name" }, 400);
 		}
 
-		if (!file || file.startsWith("/") || !/^[a-zA-Z0-9/]+$/.test(file)) {
+		if (
+			file.startsWith("/") ||
+			(file !== "" && !/^[a-zA-Z0-9/]+$/.test(file))
+		) {
 			return c.json(
 				{
 					error:
