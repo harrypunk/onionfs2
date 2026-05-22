@@ -5,6 +5,7 @@ import { catchError, shareReplay, tap } from "rxjs/operators";
 import { loadConfig } from "./config";
 import { log } from "./logging";
 import fsRoutes from "./routes/fs";
+import mountRoutes from "./routes/mount";
 import type { Variables } from "./types";
 
 const config$ = from(loadConfig()).pipe(
@@ -32,5 +33,6 @@ app.use(async (c, next) => {
 
 app.get("/", (c) => c.text("Hello Hono!"));
 app.route("/fs", fsRoutes);
+app.route("/mount", mountRoutes);
 
 export default app;
