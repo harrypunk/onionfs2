@@ -5,7 +5,9 @@ import type { Variables } from "@/types";
  * Validates that `mount` and `dir` query params conform to expected formats.
  *
  * - mount: alphanumeric only
- * - dir: alphanumeric characters with slashes (no leading slash, no traversal)
+ * - dir: relative path where each segment starts with a letter and may contain
+ *        alphanumeric characters, dots, hyphens, and underscores.
+ *        Empty string is allowed (mount root). Leading slash is forbidden.
  *
  * Returns 400 early if either param is malformed.
  */
@@ -18,10 +20,19 @@ export const validatePath = createMiddleware<{ Variables: Variables }>(
 			return c.json({ error: "Invalid mount name" }, 400);
 		}
 
-		if (dir.startsWith("/") || (dir !== "" && !/^[a-zA-Z0-9/]+$/.test(dir))) {
+		const segmentPattern = /^[a-zA-Z][a-zA-Z0-9._-]*$/;
+		const validDir =
+			dir === "" ||
+			(new RegExp(
+				`^${segmentPattern.source}(/${segmentPattern.source})*/?$`,
+			).test(dir) &&
+				!dir.startsWith("/"));
+
+		if (!validDir) {
 			return c.json(
 				{
-					error: "Invalid dir path: must be relative alphanumeric with slashes",
+					error:
+						"Invalid dir path: each segment must start with a letter and contain only alphanumeric chars, dots, hyphens, or underscores",
 				},
 				400,
 			);
