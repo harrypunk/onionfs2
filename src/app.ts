@@ -1,12 +1,15 @@
 import { type HonoLogLayerVariables, honoLogLayer } from "@loglayer/hono";
 import { Hono } from "hono";
 import { from, lastValueFrom, throwError } from "rxjs";
-import { catchError, shareReplay } from "rxjs/operators";
+import { catchError, shareReplay, tap } from "rxjs/operators";
 import { type AppConfig, loadConfig } from "./config";
 import { log } from "./logging";
 import fsRoutes from "./routes/fs";
 
 const config$ = from(loadConfig()).pipe(
+	tap((cfg) => {
+		log.debug("Config loaded:", JSON.stringify(cfg, null, 2));
+	}),
 	catchError((err) => {
 		log.withError(err).error("Failed to load config");
 		return throwError(() => err);

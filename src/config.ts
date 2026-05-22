@@ -1,4 +1,5 @@
-const DEFAULT_CONFIG_PATH = "/etc/storeagent/config.json";
+const DEFAULT_CONFIG_PATH =
+	process.env.CONFIG_PATH ?? "/opt/storeagent/config.json";
 
 export interface AppConfig {
 	bind_addr: string;
