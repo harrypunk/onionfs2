@@ -9,7 +9,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { firstValueFrom } from "rxjs";
-import { FsErrorCode } from "@/lib/fs-error";
+import { FsError, FsErrorCode } from "@/lib/fs-error";
 import { FileType, getFileContent, listDir } from "./fs";
 
 describe("getFileContent", () => {
@@ -54,21 +54,17 @@ describe("getFileContent", () => {
 	it("throws NotFound for a missing file", async () => {
 		const err = (await firstValueFrom(
 			getFileContent(join(tmp, "missing.txt")),
-		).catch((e) => e)) as Error;
-		expect(err).toBeInstanceOf(Error);
-		expect((err as unknown as { code: string }).code).toBe(
-			FsErrorCode.NotFound,
-		);
+		).catch((e) => e)) as FsError;
+		expect(err).toBeInstanceOf(FsError);
+		expect(err.code).toBe(FsErrorCode.NotFound);
 	});
 
 	it("throws NotAFile for a directory", async () => {
 		const err = (await firstValueFrom(getFileContent(testDir)).catch(
 			(e) => e,
-		)) as Error;
-		expect(err).toBeInstanceOf(Error);
-		expect((err as unknown as { code: string }).code).toBe(
-			FsErrorCode.NotAFile,
-		);
+		)) as FsError;
+		expect(err).toBeInstanceOf(FsError);
+		expect(err.code).toBe(FsErrorCode.NotAFile);
 	});
 
 	it("returns sliced stream for a byte range", async () => {
