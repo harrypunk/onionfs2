@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { type Observable, of, throwError } from "rxjs";
+import { FsError, FsErrorCode } from "./fs-error";
 
 /** Result of resolving a logical file request to a physical path. */
 export interface ResolvedPath {
@@ -22,16 +23,20 @@ export function resolveFilePath(
 	relativePath: string,
 ): Observable<ResolvedPath> {
 	if (!/^[a-zA-Z0-9]+$/.test(mount)) {
-		const err = new Error(`Invalid mount name: ${mount}`);
-		(err as NodeJS.ErrnoException).code = "EINVAL";
-		return throwError(() => err);
+		return throwError(
+			() =>
+				new FsError(
+					`Invalid mount name: ${mount}`,
+					FsErrorCode.InvalidArgument,
+				),
+		);
 	}
 
 	const basePath = mounts[mount];
 	if (!basePath) {
-		const err = new Error(`Mount not found: ${mount}`);
-		(err as NodeJS.ErrnoException).code = "ENOENT";
-		return throwError(() => err);
+		return throwError(
+			() => new FsError(`Mount not found: ${mount}`, FsErrorCode.NotFound),
+		);
 	}
 
 	const resolvedBase = resolve(basePath);
@@ -39,9 +44,9 @@ export function resolveFilePath(
 
 	// Security boundary: prevent directory traversal.
 	if (realPath !== resolvedBase && !realPath.startsWith(`${resolvedBase}/`)) {
-		const err = new Error("Path traversal detected");
-		(err as NodeJS.ErrnoException).code = "EACCES";
-		return throwError(() => err);
+		return throwError(
+			() => new FsError("Path traversal detected", FsErrorCode.AccessDenied),
+		);
 	}
 
 	return of({ mount, relativePath, realPath });

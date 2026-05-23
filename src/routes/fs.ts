@@ -1,5 +1,6 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { firstValueFrom } from "rxjs";
+import { FsErrorCode } from "@/lib/fs-error";
 import { resolvePath } from "@/middleware/resolve-path";
 import { validatePath } from "@/middleware/validate-path";
 import { getFileContent, listDir } from "@/services/fs";
@@ -15,6 +16,33 @@ const fsRoutes = new Hono<{ Variables: FsVariables }>();
 
 fsRoutes.use(validatePath);
 fsRoutes.use(resolvePath);
+
+/**
+ * Convert a filesystem error into the appropriate HTTP Response.
+ */
+function fsErrorResponse(
+	c: Context<{ Variables: FsVariables }>,
+	err: unknown,
+	fallbackMessage: string,
+): Response {
+	if (err && typeof err === "object" && "code" in err) {
+		const code = String(err.code);
+		const message = err instanceof Error ? err.message : fallbackMessage;
+
+		switch (code) {
+			case FsErrorCode.NotFound:
+				return c.json({ error: message }, 404);
+			case FsErrorCode.AccessDenied:
+			case FsErrorCode.PermissionDenied:
+				return c.json({ error: message }, 403);
+			case FsErrorCode.NotAFile:
+				return c.json({ error: message }, 400);
+			default:
+				return c.json({ error: message }, 500);
+		}
+	}
+	return c.json({ error: fallbackMessage }, 500);
+}
 
 /**
  * Parse a single `bytes=start-end` Range header.
@@ -47,15 +75,7 @@ fsRoutes.get("/list", (c) => {
 
 	return firstValueFrom(listDir(realPath)).then(
 		(result) => c.json(result),
-		(err) => {
-			if (err.code === "ENOENT") {
-				return c.json({ error: "Directory not found" }, 404);
-			}
-			if (err.code === "EACCES" || err.code === "EPERM") {
-				return c.json({ error: "Permission denied" }, 403);
-			}
-			return c.json({ error: err.message || "Failed to read directory" }, 500);
-		},
+		(err) => fsErrorResponse(c, err, "Failed to read directory"),
 	);
 });
 
@@ -99,18 +119,7 @@ fsRoutes.get("/get", (c) => {
 				},
 			});
 		},
-		(err) => {
-			if (err.code === "ENOENT") {
-				return c.json({ error: "File not found" }, 404);
-			}
-			if (err.code === "EACCES" || err.code === "EPERM") {
-				return c.json({ error: "Permission denied" }, 403);
-			}
-			if (err.code === "EISDIR") {
-				return c.json({ error: "Cannot read a directory as a file" }, 400);
-			}
-			return c.json({ error: err.message || "Failed to read file" }, 500);
-		},
+		(err) => fsErrorResponse(c, err, "Failed to read file"),
 	);
 });
 

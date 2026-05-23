@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { firstValueFrom } from "rxjs";
+import { FsErrorCode } from "@/lib/fs-error";
 import { resolveFilePath } from "@/lib/path-resolver";
 import type { Variables } from "@/types";
 
@@ -27,17 +28,16 @@ export const resolvePath = createMiddleware<{
 			return next();
 		},
 		(err) => {
-			const code = (err as NodeJS.ErrnoException).code;
-			if (code === "ENOENT") {
-				return c.json({ error: (err as Error).message }, 404);
+			if (err.code === FsErrorCode.NotFound) {
+				return c.json({ error: err.message }, 404);
 			}
-			if (code === "EACCES" || code === "EPERM") {
-				return c.json({ error: (err as Error).message }, 403);
+			if (
+				err.code === FsErrorCode.AccessDenied ||
+				err.code === FsErrorCode.PermissionDenied
+			) {
+				return c.json({ error: err.message }, 403);
 			}
-			return c.json(
-				{ error: (err as Error).message || "Failed to resolve path" },
-				500,
-			);
+			return c.json({ error: err.message || "Failed to resolve path" }, 500);
 		},
 	);
 });

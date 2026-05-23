@@ -8,6 +8,7 @@ import { join } from "node:path";
 import type { Readable } from "node:stream";
 import { forkJoin, Observable, of, throwError } from "rxjs";
 import { catchError, map, mergeMap } from "rxjs/operators";
+import { FsError, FsErrorCode, fromNodeError } from "@/lib/fs-error";
 
 /** File-type bitmask enum. */
 export enum FileType {
@@ -32,8 +33,8 @@ function readdir$(path: string): Observable<string[]> {
 	return new Observable((subscriber) => {
 		readdirCb(path, (err, files) => {
 			if (err) {
-				// Propagate fs errors (ENOENT, EACCES, etc.) downstream.
-				subscriber.error(err);
+				// Wrap native fs errors in our typed FsError.
+				subscriber.error(fromNodeError(err));
 			} else if (files !== undefined) {
 				subscriber.next(files);
 				subscriber.complete();
@@ -54,7 +55,7 @@ function stat$(path: string): Observable<Stats> {
 	return new Observable((subscriber) => {
 		statCb(path, (err, stats) => {
 			if (err) {
-				subscriber.error(err);
+				subscriber.error(fromNodeError(err));
 			} else if (stats !== undefined) {
 				subscriber.next(stats);
 				subscriber.complete();
@@ -144,9 +145,7 @@ export interface FileContent {
  */
 function assertIsFile(stats: Stats): Stats {
 	if (!stats.isFile()) {
-		const err = new Error("Not a file");
-		(err as NodeJS.ErrnoException).code = "EISDIR";
-		throw err;
+		throw new FsError("Not a file", FsErrorCode.NotAFile);
 	}
 	return stats;
 }
