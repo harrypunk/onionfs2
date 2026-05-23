@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { firstValueFrom } from "rxjs";
 import { FsError, FsErrorCode } from "@/lib/fs-error";
-import { FileType, getFileContent, listDir } from "./fs";
+import { FileType, getFileContent, listDir } from "@/services/fs";
 
 describe("getFileContent", () => {
 	const tmp = mkdtempSync(join(tmpdir(), "fs-test-"));

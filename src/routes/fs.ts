@@ -4,9 +4,9 @@ import { fileHeaders } from "@/lib/file-response";
 import { parseRangeHeader } from "@/lib/range";
 import { resolvePath } from "@/middleware/resolve-path";
 import { validatePath } from "@/middleware/validate-path";
+import { fsErrorResponse } from "@/routes/fs-error-handler";
 import { getFileContent, listDir } from "@/services/fs";
 import type { Variables } from "@/types";
-import { fsErrorResponse } from "./fs-error-handler";
 
 /** Extended variables available inside `/fs` routes after middleware runs. */
 type FsVariables = Variables & {

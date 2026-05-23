@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { resolve } from "node:path";
 import { firstValueFrom } from "rxjs";
-import { type FsError, FsErrorCode } from "./fs-error";
-import { resolveFilePath } from "./path-resolver";
+import { type FsError, FsErrorCode } from "@/lib/fs-error";
+import { resolveFilePath } from "@/lib/path-resolver";
 
 const MOUNTS = {
 	data: "/mnt/data",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { validateRelativePath } from "./filepath-validate";
+import { validateRelativePath } from "@/lib/filepath-validate";
 
 describe("validateRelativePath", () => {
 	describe("valid paths", () => {

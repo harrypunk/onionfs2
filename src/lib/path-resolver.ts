@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { type Observable, of, throwError } from "rxjs";
-import { FsError, FsErrorCode } from "./fs-error";
+import { FsError, FsErrorCode } from "@/lib/fs-error";
 
 /** Result of resolving a logical file request to a physical path. */
 export interface ResolvedPath {
