@@ -1,6 +1,12 @@
-import { readdir as readdirCb, type Stats, stat as statCb } from "node:fs";
+import {
+	createReadStream,
+	readdir as readdirCb,
+	type Stats,
+	stat as statCb,
+} from "node:fs";
 import { join } from "node:path";
-import { forkJoin, Observable, of } from "rxjs";
+import type { Readable } from "node:stream";
+import { forkJoin, Observable, of, throwError } from "rxjs";
 import { catchError, map, mergeMap } from "rxjs/operators";
 
 /** File-type bitmask enum. */
@@ -105,5 +111,59 @@ export function listDir(
 				map((results) => ({ path, entries: results })),
 			);
 		}),
+	);
+}
+
+/** Byte range for partial content requests. */
+export interface ByteRange {
+	/** Inclusive start byte index. */
+	start: number;
+	/** Inclusive end byte index; omitted means read to EOF. */
+	end?: number;
+}
+
+/** Result of opening a file for streaming. */
+export interface FileContent {
+	/** Node.js readable stream of the file (or range). */
+	stream: Readable;
+	/** Total file size in bytes. */
+	size: number;
+	/** Range that was requested, if any. */
+	range?: ByteRange;
+}
+
+/**
+ * Open a file as a byte stream.
+ *
+ * Uses `fs.createReadStream` under the hood so memory stays flat
+ * regardless of file size.
+ *
+ * @param path   Absolute path to the file.
+ * @param range  Optional byte range `{ start, end? }`.
+ * @returns      Observable that emits once with the stream and metadata.
+ */
+function assertIsFile(stats: Stats): Stats {
+	if (!stats.isFile()) {
+		const err = new Error("Not a file");
+		(err as NodeJS.ErrnoException).code = "EISDIR";
+		throw err;
+	}
+	return stats;
+}
+
+export function getFileContent(
+	path: string,
+	range?: ByteRange,
+): Observable<FileContent> {
+	return stat$(path).pipe(
+		map(assertIsFile),
+		map((stats) => {
+			const options = range
+				? { start: range.start, end: range.end }
+				: undefined;
+			const stream = createReadStream(path, options);
+			return { stream, size: stats.size, range };
+		}),
+		catchError((err) => throwError(() => err)),
 	);
 }
