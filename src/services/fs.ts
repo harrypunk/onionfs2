@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { forkJoin, type Observable, of, throwError } from "rxjs";
 import { catchError, map, mergeMap } from "rxjs/operators";
 import { FsError, FsErrorCode } from "@/lib/fs-error";
+import type { ByteRange } from "@/lib/range";
 import { fileStream, readDir, stat } from "@/repositories/fs";
 
 /** File-type bitmask enum. */
@@ -70,14 +71,6 @@ function assertIsFile(stats: Stats): Stats {
 		throw new FsError("Not a file", FsErrorCode.NotAFile);
 	}
 	return stats;
-}
-
-/** Byte range for partial content requests. */
-export interface ByteRange {
-	/** Inclusive start byte index. */
-	start: number;
-	/** Inclusive end byte index; omitted means read to EOF. */
-	end?: number;
 }
 
 /** File stream with its total byte size. */
