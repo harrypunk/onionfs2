@@ -45,6 +45,25 @@ function fsErrorResponse(
 }
 
 /**
+ * Build response headers for a file download or range response.
+ */
+function fileHeaders(
+	size: number,
+	contentLength?: number,
+	rangeSpec?: string,
+): Record<string, string> {
+	const headers: Record<string, string> = {
+		"Content-Type": "application/octet-stream",
+		"Content-Length": String(contentLength ?? size),
+		"Accept-Ranges": "bytes",
+	};
+	if (rangeSpec) {
+		headers["Content-Range"] = `bytes ${rangeSpec}/${size}`;
+	}
+	return headers;
+}
+
+/**
  * Parse a single `bytes=start-end` Range header.
  *
  * @returns Parsed range or `undefined` if the header is missing/malformed.
@@ -90,33 +109,27 @@ fsRoutes.get("/get", (c) => {
 	const range = parseRangeHeader(c.req.header("range"));
 
 	return firstValueFrom(getFileContent(realPath, range)).then(
-		({ stream, size, range }) => {
+		({ stream, size }) => {
 			if (range) {
 				if (range.start >= size) {
-					stream.destroy();
 					return c.body(null, 416, {
 						"Content-Range": `bytes */${size}`,
 					});
 				}
 				const actualEnd = Math.min(range.end ?? size - 1, size - 1);
 				const contentLength = actualEnd - range.start + 1;
-				return new Response(stream as unknown as ReadableStream, {
+				return new Response(stream, {
 					status: 206,
-					headers: {
-						"Content-Type": "application/octet-stream",
-						"Content-Length": String(contentLength),
-						"Content-Range": `bytes ${range.start}-${actualEnd}/${size}`,
-						"Accept-Ranges": "bytes",
-					},
+					headers: fileHeaders(
+						size,
+						contentLength,
+						`${range.start}-${actualEnd}`,
+					),
 				});
 			}
-			return new Response(stream as unknown as ReadableStream, {
+			return new Response(stream, {
 				status: 200,
-				headers: {
-					"Content-Type": "application/octet-stream",
-					"Content-Length": String(size),
-					"Accept-Ranges": "bytes",
-				},
+				headers: fileHeaders(size),
 			});
 		},
 		(err) => fsErrorResponse(c, err, "Failed to read file"),

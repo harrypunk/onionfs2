@@ -1,14 +1,9 @@
-import {
-	createReadStream,
-	readdir as readdirCb,
-	type Stats,
-	stat as statCb,
-} from "node:fs";
+import type { Stats } from "node:fs";
 import { join } from "node:path";
-import type { Readable } from "node:stream";
-import { forkJoin, Observable, of, throwError } from "rxjs";
+import { forkJoin, type Observable, of, throwError } from "rxjs";
 import { catchError, map, mergeMap } from "rxjs/operators";
-import { FsError, FsErrorCode, fromNodeError } from "@/lib/fs-error";
+import { FsError, FsErrorCode } from "@/lib/fs-error";
+import { fileStream, readDir, stat } from "@/repositories/fs";
 
 /** File-type bitmask enum. */
 export enum FileType {
@@ -26,52 +21,11 @@ export interface DirEntry {
 }
 
 /**
- * Wrap Node's callback-based `readdir` as a cold Observable.
- * Emits the array of entry names and completes, or errors on failure.
- */
-function readdir$(path: string): Observable<string[]> {
-	return new Observable((subscriber) => {
-		readdirCb(path, (err, files) => {
-			if (err) {
-				// Wrap native fs errors in our typed FsError.
-				subscriber.error(fromNodeError(err));
-			} else if (files !== undefined) {
-				subscriber.next(files);
-				subscriber.complete();
-			} else {
-				// Defensive: Node should never call back with undefined on success,
-				// but we guard against it to avoid hanging the stream.
-				subscriber.error(new Error("Unexpected undefined from readdir"));
-			}
-		});
-	});
-}
-
-/**
- * Wrap Node's callback-based `stat` as a cold Observable.
- * Emits the Stats object and completes, or errors on failure.
- */
-function stat$(path: string): Observable<Stats> {
-	return new Observable((subscriber) => {
-		statCb(path, (err, stats) => {
-			if (err) {
-				subscriber.error(fromNodeError(err));
-			} else if (stats !== undefined) {
-				subscriber.next(stats);
-				subscriber.complete();
-			} else {
-				subscriber.error(new Error("Unexpected undefined from stat"));
-			}
-		});
-	});
-}
-
-/**
  * List the contents of a directory and classify each entry as
  * file, directory, or unknown.
  *
  * The pipeline works as follows:
- * 1. Read the directory names.
+ * 1. Read the directory names from the repository.
  * 2. For each name, stat it in parallel via forkJoin.
  * 3. Map stat results to DirEntry objects.
  * 4. If a single stat fails, catch locally so forkJoin does not abort
@@ -83,16 +37,14 @@ function stat$(path: string): Observable<Stats> {
 export function listDir(
 	path: string,
 ): Observable<{ path: string; entries: DirEntry[] }> {
-	return readdir$(path).pipe(
-		// Flatten the array of names into parallel stat requests.
+	return readDir(path).pipe(
 		mergeMap((entries) => {
 			if (entries.length === 0) {
 				return of({ path, entries: [] as DirEntry[] });
 			}
 
-			// Build an Observable for each entry's stat + classification.
 			const entryObservables = entries.map((name) =>
-				stat$(join(path, name)).pipe(
+				stat(join(path, name)).pipe(
 					map(
 						(s) =>
 							({
@@ -101,18 +53,23 @@ export function listDir(
 								size: s.isDirectory() ? undefined : s.size,
 							}) as DirEntry,
 					),
-					// Local error recovery: if stat fails (e.g. symlink broken),
-					// emit "unknown" instead of killing the whole forkJoin.
 					catchError(() => of({ name, type: 0 }) as Observable<DirEntry>),
 				),
 			);
 
-			// Wait for all stats to finish, then bundle into the final shape.
 			return forkJoin(entryObservables).pipe(
 				map((results) => ({ path, entries: results })),
 			);
 		}),
 	);
+}
+
+/** Business rule: reject if the path is not a regular file. */
+function assertIsFile(stats: Stats): Stats {
+	if (!stats.isFile()) {
+		throw new FsError("Not a file", FsErrorCode.NotAFile);
+	}
+	return stats;
 }
 
 /** Byte range for partial content requests. */
@@ -123,45 +80,34 @@ export interface ByteRange {
 	end?: number;
 }
 
-/** Result of opening a file for streaming. */
-export interface FileContent {
-	/** Node.js readable stream of the file (or range). */
-	stream: Readable;
-	/** Total file size in bytes. */
+/** File stream with its total byte size. */
+export interface FileStream {
+	stream: ReadableStream;
 	size: number;
-	/** Range that was requested, if any. */
-	range?: ByteRange;
 }
 
 /**
  * Open a file as a byte stream.
  *
- * Uses `fs.createReadStream` under the hood so memory stays flat
- * regardless of file size.
+ * Validates the path is a file, then delegates streaming to the repository.
  *
  * @param path   Absolute path to the file.
  * @param range  Optional byte range `{ start, end? }`.
  * @returns      Observable that emits once with the stream and metadata.
  */
-function assertIsFile(stats: Stats): Stats {
-	if (!stats.isFile()) {
-		throw new FsError("Not a file", FsErrorCode.NotAFile);
-	}
-	return stats;
-}
-
 export function getFileContent(
 	path: string,
 	range?: ByteRange,
-): Observable<FileContent> {
-	return stat$(path).pipe(
+): Observable<FileStream> {
+	return stat(path).pipe(
 		map(assertIsFile),
 		map((stats) => {
-			const options = range
-				? { start: range.start, end: range.end }
-				: undefined;
-			const stream = createReadStream(path, options);
-			return { stream, size: stats.size, range };
+			const start = range?.start ?? 0;
+			const end = range?.end !== undefined ? range.end + 1 : undefined;
+			return {
+				stream: fileStream(path, start, end),
+				size: stats.size,
+			};
 		}),
 		catchError((err) => throwError(() => err)),
 	);
