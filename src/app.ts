@@ -6,6 +6,7 @@ import { loadConfig } from "@/config";
 import { log } from "@/logging";
 import fsRoutes from "@/routes/fs";
 import mountRoutes from "@/routes/mount";
+import { InMemoryUploadSessionManager } from "@/services/upload-session";
 import type { Variables } from "@/types";
 
 const config$ = from(loadConfig()).pipe(
@@ -28,6 +29,13 @@ app.use(honoLogLayer({ instance: log }));
 app.use(async (c, next) => {
 	const cfg = await lastValueFrom(config$);
 	c.set("config", cfg);
+	await next();
+});
+
+// Shared upload session manager (singleton). Routes retrieve it via c.get("uploadSessionManager").
+const uploadSessionManager = new InMemoryUploadSessionManager();
+app.use(async (c, next) => {
+	c.set("uploadSessionManager", uploadSessionManager);
 	await next();
 });
 

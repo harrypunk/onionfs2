@@ -3,14 +3,7 @@ import { dirname, join } from "node:path";
 import { defer, Observable, throwError } from "rxjs";
 import { map, switchMap } from "rxjs/operators";
 import { FsError, FsErrorCode, wrapFsError } from "@/lib/fs-error";
-
-/** In-memory session store for multipart uploads. */
-interface UploadSession {
-	targetPath: string;
-	tempDir: string;
-}
-
-const sessions = new Map<string, UploadSession>();
+import type { UploadSessionManager } from "@/services/upload-session";
 
 /** Pipe a Web Stream into a file on disk using Bun's FileSink. */
 function writeStream(
@@ -94,13 +87,18 @@ export function uploadFile(
  * Returns an `uploadId` that the client must pass to subsequent
  * `/multipart/upload` and `/multipart/complete` calls.
  */
-export function createMultipartSession(targetPath: string): Observable<string> {
+export function createMultipartSession(
+	targetPath: string,
+	manager: UploadSessionManager,
+): Observable<string> {
 	const uploadId = crypto.randomUUID();
 	const tempDir = `${targetPath}-upload-${uploadId}`;
-	sessions.set(uploadId, { targetPath, tempDir });
 
 	return wrapFsError(
-		defer(() => mkdir(tempDir, { recursive: true })).pipe(map(() => uploadId)),
+		defer(() => manager.save(uploadId, { targetPath, tempDir })).pipe(
+			switchMap(() => mkdir(tempDir, { recursive: true })),
+			map(() => uploadId),
+		),
 	);
 }
 
@@ -113,6 +111,7 @@ export function uploadPart(
 	uploadId: string,
 	partNumber: number,
 	source: ReadableStream<Uint8Array> | null,
+	manager: UploadSessionManager,
 ): Observable<void> {
 	if (!source) {
 		return throwError(
@@ -126,15 +125,19 @@ export function uploadPart(
 		);
 	}
 
-	const session = sessions.get(uploadId);
-	if (!session) {
-		return throwError(
-			() => new FsError("Upload session not found", FsErrorCode.NotFound),
-		);
-	}
-
-	const chunkPath = join(session.tempDir, String(partNumber));
-	return wrapFsError(writeStream(chunkPath, source));
+	return wrapFsError(
+		defer(() => manager.get(uploadId)).pipe(
+			switchMap((session) => {
+				if (!session) {
+					return throwError(
+						() => new FsError("Upload session not found", FsErrorCode.NotFound),
+					);
+				}
+				const chunkPath = join(session.tempDir, String(partNumber));
+				return writeStream(chunkPath, source);
+			}),
+		),
+	);
 }
 
 /**
@@ -147,41 +150,50 @@ export function uploadPart(
  */
 export function completeMultipartUpload(
 	uploadId: string,
+	manager: UploadSessionManager,
 ): Observable<{ path: string; size: number }> {
-	const session = sessions.get(uploadId);
-	if (!session) {
-		return throwError(
-			() => new FsError("Upload session not found", FsErrorCode.NotFound),
-		);
-	}
-
 	return wrapFsError(
-		defer(() => readdir(session.tempDir)).pipe(
-			map((entries) =>
-				entries
-					.filter((f) => /^\d+$/.test(f))
-					.map((f) => ({ num: Number(f), path: join(session.tempDir, f) }))
-					.sort((a, b) => a.num - b.num),
-			),
-			switchMap((parts) =>
-				defer(async () => {
-					await mkdir(dirname(session.targetPath), { recursive: true });
-					const writer = Bun.file(session.targetPath).writer();
-					for (const part of parts) {
-						writer.write(await Bun.file(part.path).bytes());
-					}
-					writer.end();
-				}),
-			),
-			switchMap(() =>
-				defer(() => rm(session.tempDir, { recursive: true, force: true })),
-			),
-			map(() => {
-				sessions.delete(uploadId);
-				return {
-					path: session.targetPath,
-					size: Bun.file(session.targetPath).size,
-				};
+		defer(() => manager.get(uploadId)).pipe(
+			switchMap((session) => {
+				if (!session) {
+					return throwError(
+						() => new FsError("Upload session not found", FsErrorCode.NotFound),
+					);
+				}
+				return defer(() => readdir(session.tempDir)).pipe(
+					map((entries) =>
+						entries
+							.filter((f) => /^\d+$/.test(f))
+							.map((f) => ({
+								num: Number(f),
+								path: join(session.tempDir, f),
+							}))
+							.sort((a, b) => a.num - b.num),
+					),
+					switchMap((parts) =>
+						defer(async () => {
+							await mkdir(dirname(session.targetPath), {
+								recursive: true,
+							});
+							const writer = Bun.file(session.targetPath).writer();
+							for (const part of parts) {
+								writer.write(await Bun.file(part.path).bytes());
+							}
+							writer.end();
+						}),
+					),
+					switchMap(() =>
+						defer(() => rm(session.tempDir, { recursive: true, force: true })),
+					),
+					switchMap(() =>
+						defer(() => manager.delete(uploadId)).pipe(
+							map(() => ({
+								path: session.targetPath,
+								size: Bun.file(session.targetPath).size,
+							})),
+						),
+					),
+				);
 			}),
 		),
 	);

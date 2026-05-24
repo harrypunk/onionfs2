@@ -10,6 +10,7 @@ import {
 	uploadFile,
 	uploadPart,
 } from "@/services/upload";
+import { InMemoryUploadSessionManager } from "@/services/upload-session";
 
 describe("uploadFile", () => {
 	function tempDir(): string {
@@ -67,23 +68,28 @@ describe("multipart upload", () => {
 	}
 
 	test("creates session, uploads parts, and completes", async () => {
+		const manager = new InMemoryUploadSessionManager();
 		const dir = tempDir();
 		const target = join(dir, "final.bin");
 
-		const uploadId = await firstValueFrom(createMultipartSession(target));
+		const uploadId = await firstValueFrom(
+			createMultipartSession(target, manager),
+		);
 		expect(uploadId).toBeString();
 
 		await firstValueFrom(
-			uploadPart(uploadId, 1, streamFrom(new Uint8Array([1, 2, 3]))),
+			uploadPart(uploadId, 1, streamFrom(new Uint8Array([1, 2, 3])), manager),
 		);
 		await firstValueFrom(
-			uploadPart(uploadId, 2, streamFrom(new Uint8Array([4, 5, 6]))),
+			uploadPart(uploadId, 2, streamFrom(new Uint8Array([4, 5, 6])), manager),
 		);
 		await firstValueFrom(
-			uploadPart(uploadId, 3, streamFrom(new Uint8Array([7, 8, 9]))),
+			uploadPart(uploadId, 3, streamFrom(new Uint8Array([7, 8, 9])), manager),
 		);
 
-		const result = await firstValueFrom(completeMultipartUpload(uploadId));
+		const result = await firstValueFrom(
+			completeMultipartUpload(uploadId, manager),
+		);
 		expect(result.path).toBe(target);
 		expect(result.size).toBe(9);
 
@@ -95,15 +101,17 @@ describe("multipart upload", () => {
 	});
 
 	test("rejects upload to missing session", async () => {
+		const manager = new InMemoryUploadSessionManager();
 		const err = (await firstValueFrom(
-			uploadPart("missing-id", 1, streamFrom(new Uint8Array([1]))),
+			uploadPart("missing-id", 1, streamFrom(new Uint8Array([1])), manager),
 		).catch((e) => e)) as { code: FsErrorCode };
 		expect(err.code).toBe(FsErrorCode.NotFound);
 	});
 
 	test("rejects complete on missing session", async () => {
+		const manager = new InMemoryUploadSessionManager();
 		const err = (await firstValueFrom(
-			completeMultipartUpload("missing-id"),
+			completeMultipartUpload("missing-id", manager),
 		).catch((e) => e)) as {
 			code: FsErrorCode;
 		};
@@ -111,13 +119,16 @@ describe("multipart upload", () => {
 	});
 
 	test("rejects null body for part upload", async () => {
+		const manager = new InMemoryUploadSessionManager();
 		const dir = tempDir();
 		const target = join(dir, "final.bin");
-		const uploadId = await firstValueFrom(createMultipartSession(target));
+		const uploadId = await firstValueFrom(
+			createMultipartSession(target, manager),
+		);
 
-		const err = (await firstValueFrom(uploadPart(uploadId, 1, null)).catch(
-			(e) => e,
-		)) as {
+		const err = (await firstValueFrom(
+			uploadPart(uploadId, 1, null, manager),
+		).catch((e) => e)) as {
 			code: FsErrorCode;
 		};
 		expect(err.code).toBe(FsErrorCode.InvalidArgument);

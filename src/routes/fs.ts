@@ -40,7 +40,9 @@ fsRoutes.post("/multipart/upload", (c) => {
 	}
 
 	const source = c.req.raw.body;
-	return firstValueFrom(uploadPart(uploadId, partNumber, source)).then(
+	return firstValueFrom(
+		uploadPart(uploadId, partNumber, source, c.var.uploadSessionManager),
+	).then(
 		() => c.json({ uploadId, partNumber }),
 		(err) => fsErrorResponse(c, err, "Failed to upload part"),
 	);
@@ -58,7 +60,9 @@ fsRoutes.post("/multipart/complete", (c) => {
 		return c.json({ error: "uploadId is required" }, 400);
 	}
 
-	return firstValueFrom(completeMultipartUpload(uploadId)).then(
+	return firstValueFrom(
+		completeMultipartUpload(uploadId, c.var.uploadSessionManager),
+	).then(
 		(result) => c.json(result),
 		(err) => fsErrorResponse(c, err, "Failed to complete upload"),
 	);
@@ -99,7 +103,9 @@ fsRoutes.post("/upload", (c) => {
  */
 fsRoutes.post("/multipart/init", (c) => {
 	const realPath = c.var.realPath;
-	return firstValueFrom(createMultipartSession(realPath)).then(
+	return firstValueFrom(
+		createMultipartSession(realPath, c.var.uploadSessionManager),
+	).then(
 		(uploadId) => c.json({ uploadId }),
 		(err) => fsErrorResponse(c, err, "Failed to create upload session"),
 	);
