@@ -9,20 +9,20 @@ type ResolvePathVariables = Variables & {
 };
 
 /**
- * Resolves the logical path coordinates (mount + dir) to an absolute
+ * Resolves the logical path coordinates (mount + dir/file) to an absolute
  * physical path and stores it in `c.var.realPath`.
  *
- * Must run **after** `validatePath` middleware so `mount` and `dir`
- * are guaranteed to be present and well-formed.
+ * Must run **after** `validatePath` middleware so `mount` and the path
+ * param (`dir` or `file`) are guaranteed to be present and well-formed.
  */
 export const resolvePath = createMiddleware<{
 	Variables: ResolvePathVariables;
 }>(async (c, next) => {
 	const mount = c.req.query("mount") ?? "";
-	const dir = c.req.query("dir") ?? "";
+	const relativePath = c.req.query("file") ?? c.req.query("dir") ?? "";
 	const cfg = c.get("config");
 
-	return firstValueFrom(resolveFilePath(cfg.mounts, mount, dir)).then(
+	return firstValueFrom(resolveFilePath(cfg.mounts, mount, relativePath)).then(
 		(resolved) => {
 			c.set("realPath", resolved.realPath);
 			return next();

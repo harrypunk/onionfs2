@@ -15,15 +15,15 @@ import type { Variables } from "@/types";
 export const validatePath = createMiddleware<{ Variables: Variables }>(
 	async (c, next) => {
 		const mount = c.req.query("mount");
-		const dir = c.req.query("dir") ?? "";
+		const relativePath = c.req.query("file") ?? c.req.query("dir") ?? "";
 
 		if (!mount || !/^[a-zA-Z0-9]+$/.test(mount)) {
 			return c.json({ error: "Invalid mount name" }, 400);
 		}
 
-		const dirError = validateRelativePath(dir);
-		if (dirError) {
-			return c.json({ error: `Invalid dir path: ${dirError}` }, 400);
+		const pathError = validateRelativePath(relativePath);
+		if (pathError) {
+			return c.json({ error: `Invalid path: ${pathError}` }, 400);
 		}
 
 		await next();
