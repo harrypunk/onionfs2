@@ -167,6 +167,132 @@ curl -H "Range: bytes=0-1023" \
 | `403`  | Path traversal detected |
 | `500`  | Unexpected filesystem error |
 
+### `POST /fs/upload?mount=<name>&dir=<path>`
+
+Single-shot file upload. The request body is streamed directly to disk.
+
+#### Query Parameters
+
+| Parameter | Required | Format | Description |
+|-----------|----------|--------|-------------|
+| `mount`   | Yes      | Alphanumeric (`a-zA-Z0-9`) | Logical mount name from config |
+| `dir`     | Yes      | Relative path to file | Target file path inside the mount |
+
+#### Example
+
+```sh
+curl -X POST \
+  --data-binary @vacation.jpg \
+  "http://localhost:3000/fs/upload?mount=nvme1&dir=photos/2024/vacation.jpg"
+```
+
+#### Success Response (200)
+
+```json
+{
+  "path": "/mnt/nvme1/photos/2024/vacation.jpg",
+  "size": 2048000
+}
+```
+
+#### Error Responses
+
+| Status | Condition |
+|--------|-----------|
+| `400`  | Missing body, invalid `mount`, or malformed path |
+| `404`  | Mount not found |
+| `403`  | Path traversal detected |
+| `500`  | Unexpected filesystem error |
+
+---
+
+### `POST /fs/multipart/init?mount=<name>&file=<path>`
+
+Start a multipart upload session for a large file. Returns an `uploadId` used by subsequent `/multipart/upload` and `/multipart/complete` calls.
+
+The backend creates a temporary part folder next to the target file:
+`${targetPath}-upload-${uploadId}`.
+
+#### Query Parameters
+
+| Parameter | Required | Format | Description |
+|-----------|----------|--------|-------------|
+| `mount`   | Yes      | Alphanumeric (`a-zA-Z0-9`) | Logical mount name from config |
+| `file`    | Yes      | Relative path to file | Target file path inside the mount |
+
+#### Example
+
+```sh
+curl -X POST \
+  "http://localhost:3000/fs/multipart/init?mount=nvme1&file=videos/4k/drone.mp4"
+```
+
+#### Success Response (200)
+
+```json
+{
+  "uploadId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+---
+
+### `POST /fs/multipart/upload?uploadId=<id>&partNumber=<n>`
+
+Upload a single part (chunk) of a multipart session. Parts are numbered starting from `1`.
+
+#### Query Parameters
+
+| Parameter     | Required | Format | Description |
+|---------------|----------|--------|-------------|
+| `uploadId`    | Yes      | UUID   | Session ID from `/multipart/init` |
+| `partNumber`  | Yes      | Integer ≥ 1 | Part index |
+
+#### Example
+
+```sh
+curl -X POST \
+  --data-binary @part1.bin \
+  "http://localhost:3000/fs/multipart/upload?uploadId=a1b2c3d4&partNumber=1"
+```
+
+#### Success Response (200)
+
+```json
+{
+  "uploadId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "partNumber": 1
+}
+```
+
+---
+
+### `POST /fs/multipart/complete?uploadId=<id>`
+
+Finalise a multipart upload. The backend concatenates all parts in numeric order, writes the result to the target file, and removes the temporary part folder.
+
+#### Query Parameters
+
+| Parameter  | Required | Format | Description |
+|------------|----------|--------|-------------|
+| `uploadId` | Yes      | UUID   | Session ID from `/multipart/init` |
+
+#### Example
+
+```sh
+curl -X POST \
+  "http://localhost:3000/fs/multipart/complete?uploadId=a1b2c3d4"
+```
+
+#### Success Response (200)
+
+```json
+{
+  "path": "/mnt/nvme1/videos/4k/drone.mp4",
+  "size": 2147483648
+}
+```
+
 ## Architecture
 
 The codebase follows a **3-layer architecture** with clear separation of concerns:
@@ -186,7 +312,7 @@ Repository (src/repositories/)
 
 Every request passes through two middleware layers:
 
-1. **validatePath** — checks that `mount` and `dir` params conform to expected formats. Returns `400` early if either is malformed.
+1. **validatePath** — checks that `mount` and path params (`dir` or `file`) conform to expected formats. Returns `400` early if either is malformed.
 2. **resolvePath** — resolves the logical coordinates to an absolute physical path using `node:path.resolve`, then verifies the result stays within the mount's boundary. Returns `404` for missing mounts or `403` for traversal attempts.
 
 The handler itself never sees invalid or escaped paths.
