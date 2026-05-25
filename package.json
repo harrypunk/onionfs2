@@ -1,9 +1,9 @@
 {
 	"name": "onon-fs2",
 	"private": true,
-	"workspaces": ["apps/*"],
 	"scripts": {
 		"dev:back": "bun run --filter backend dev",
 		"test": "bun test"
-	}
+	},
+	"workspaces": ["apps/*"]
 }
