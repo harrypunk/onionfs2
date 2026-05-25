@@ -6,7 +6,42 @@ A lightweight distributed file system for home LAN, designed to run on k3s clust
 
 Each node runs a lightweight agent server that exposes a local HTTP API and coordinates with other nodes via NATS JetStream. The system is optimized for low-resource environments — ideal for Raspberry Pi homelab setups or small k3s deployments.
 
-## Configuration
+This repository is a **Bun monorepo** managed with workspaces:
+
+```
+apps/
+  backend/    — Hono HTTP API (Bun + TypeScript + RxJS)
+  frontend/   — SvelteKit web UI
+```
+
+## Development
+
+```sh
+# Install dependencies for all workspaces
+bun install
+
+# Backend — start dev server with hot reload and debug logging
+bun run --filter backend dev
+
+# Frontend — start Vite dev server
+bun run --filter frontend dev
+
+# Run backend tests
+bun run --filter backend test
+
+# Type check backend
+bun run --filter backend tsc --noEmit
+
+# Type check frontend
+bun run --filter frontend check
+
+# Lint and format entire repo
+bunx biome check --write .
+```
+
+## Backend
+
+### Configuration
 
 The agent loads its configuration from:
 
@@ -17,7 +52,7 @@ The agent loads its configuration from:
 Override the path via the `CONFIG_PATH` environment variable:
 
 ```sh
-CONFIG_PATH=/custom/config.json bun run src/index.ts
+CONFIG_PATH=/custom/config.json bun run --filter backend dev
 ```
 
 Copy the example file and install it at the default path:
@@ -295,16 +330,16 @@ curl -X POST \
 
 ## Architecture
 
-The codebase follows a **3-layer architecture** with clear separation of concerns:
+The backend follows a **3-layer architecture** with clear separation of concerns:
 
 ```
-Route (src/routes/)
+Route (apps/backend/src/routes/)
   └─ HTTP entry point: parse headers, call services, build Responses
 
-Service (src/services/)
+Service (apps/backend/src/services/)
   └─ Business logic: validation rules, orchestration, domain types
 
-Repository (src/repositories/)
+Repository (apps/backend/src/repositories/)
   └─ Raw I/O: filesystem operations, no business rules
 ```
 
@@ -320,19 +355,3 @@ The handler itself never sees invalid or escaped paths.
 ### Typed Errors
 
 All filesystem errors are normalized to `FsError` with a typed `FsErrorCode` enum (`ENOENT`, `EACCES`, `EPERM`, `EINVAL`, `EISDIR`). Routes and middleware use these codes — never string comparisons — to map to the correct HTTP status.
-
-## Development
-
-```sh
-# Start dev server with hot reload and debug logging
-bun run dev
-
-# Run tests
-bun test
-
-# Type check
-bunx tsc --noEmit
-
-# Lint and format
-bunx biome check --write .
-```
