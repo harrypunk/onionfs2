@@ -1,5 +1,5 @@
 {
-	"name": "backend",
+	"name": "storeagent",
 	"scripts": {
 		"dev": "LOG_LEVEL=debug bun run --hot src/index.ts",
 		"test": "bun test",

@@ -10,7 +10,7 @@ This repository is a **Bun monorepo** managed with workspaces:
 
 ```
 apps/
-  backend/    — Hono HTTP API (Bun + TypeScript + RxJS)
+  storeagent/ — Hono HTTP API (Bun + TypeScript + RxJS)
   frontend/   — SvelteKit web UI
 ```
 
@@ -21,16 +21,16 @@ apps/
 bun install
 
 # Backend — start dev server with hot reload and debug logging
-bun run --filter backend dev
+bun run --filter storeagent dev
 
 # Frontend — start Vite dev server
 bun run --filter frontend dev
 
-# Run backend tests
-bun run --filter backend test
+# Run storeagent tests
+bun run --filter storeagent test
 
-# Type check backend
-bun run --filter backend tsc --noEmit
+# Type check storeagent
+bun run --filter storeagent tsc --noEmit
 
 # Type check frontend
 bun run --filter frontend check
@@ -52,7 +52,7 @@ The agent loads its configuration from:
 Override the path via the `CONFIG_PATH` environment variable:
 
 ```sh
-CONFIG_PATH=/custom/config.json bun run --filter backend dev
+CONFIG_PATH=/custom/config.json bun run --filter storeagent dev
 ```
 
 Copy the example file and install it at the default path:
@@ -245,7 +245,7 @@ curl -X POST \
 
 Start a multipart upload session for a large file. Returns an `uploadId` used by subsequent `/multipart/upload` and `/multipart/complete` calls.
 
-The backend creates a temporary part folder next to the target file:
+The storeagent creates a temporary part folder next to the target file:
 `${targetPath}-upload-${uploadId}`.
 
 #### Query Parameters
@@ -304,7 +304,7 @@ curl -X POST \
 
 ### `POST /fs/multipart/complete?uploadId=<id>`
 
-Finalise a multipart upload. The backend concatenates all parts in numeric order, writes the result to the target file, and removes the temporary part folder.
+Finalise a multipart upload. The storeagent concatenates all parts in numeric order, writes the result to the target file, and removes the temporary part folder.
 
 #### Query Parameters
 
@@ -330,16 +330,16 @@ curl -X POST \
 
 ## Architecture
 
-The backend follows a **3-layer architecture** with clear separation of concerns:
+The storeagent follows a **3-layer architecture** with clear separation of concerns:
 
 ```
-Route (apps/backend/src/routes/)
+Route (apps/storeagent/src/routes/)
   └─ HTTP entry point: parse headers, call services, build Responses
 
-Service (apps/backend/src/services/)
+Service (apps/storeagent/src/services/)
   └─ Business logic: validation rules, orchestration, domain types
 
-Repository (apps/backend/src/repositories/)
+Repository (apps/storeagent/src/repositories/)
   └─ Raw I/O: filesystem operations, no business rules
 ```
 
