@@ -2,7 +2,10 @@
 	"name": "backend",
 	"scripts": {
 		"dev": "LOG_LEVEL=debug bun run --hot src/index.ts",
-		"test": "bun test"
+		"test": "bun test",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write ."
 	},
 	"dependencies": {
 		"@loglayer/transport-pino": "^3.0.3",

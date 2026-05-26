@@ -1,6 +1,6 @@
 <script lang="ts">
-	import 'bulma/css/bulma.css';
-	import favicon from '$lib/assets/favicon.svg';
+	import "bulma/css/bulma.css";
+	import favicon from "$lib/assets/favicon.svg";
 
 	let { children } = $props();
 </script>
