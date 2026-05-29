@@ -66,19 +66,21 @@ sudo cp config.example.agent.json /opt/storeagent/config.json
 
 | Field | Description |
 |-------|-------------|
-| `bind_addr` | HTTP listen address (e.g. `0.0.0.0:3001`) |
+| `bind_addr` | HTTP listen IP address (e.g. `0.0.0.0`) |
+| `bind_port` | HTTP listen port (e.g. `3001`) |
 | `nats_server` | NATS endpoint for cluster coordination and JetStream messaging |
 | `mounts` | Map of logical mount name → absolute physical directory path |
 | `node_id` | Unique identifier for this agent instance |
 | `cluster_url` | Internal cluster address used for node-to-node communication |
 | `public_url` | Publicly reachable address for client access |
-| `announce_interval_sec` | Heartbeat interval in seconds for NATS KV presence |
+| `announce_interval_sec` | Heartbeat interval in seconds for NATS presence announcements |
 
 ### Example `config.json`
 
 ```json
 {
-  "bind_addr": "0.0.0.0:3001",
+  "bind_addr": "0.0.0.0",
+  "bind_port": 3001,
   "nats_server": "nats.lan:4222",
   "mounts": {
     "data1": "/data1",
@@ -327,6 +329,29 @@ curl -X POST \
   "size": 2147483648
 }
 ```
+
+## Cluster Coordination
+
+Each agent maintains a periodic NATS heartbeat on the `onionfs.agent.announce` subject. The payload includes:
+
+| Field | Description |
+|-------|-------------|
+| `node_id` | Agent identifier |
+| `mounts` | Logical → physical mount map |
+| `public_url` | Reachable address for client requests |
+
+Heartbeats run independently of the HTTP server — a NATS failure is logged but does not crash the agent.
+
+## Deployment
+
+A Helm chart in `helm/` deploys multiple agents to a k3s cluster. Each agent gets its own ConfigMap and Deployment, pinned to a specific node via `nodeSelector` with `hostPath` volumes for direct filesystem access.
+
+```sh
+# Deploy all agents defined in helm/values.yaml
+helm upgrade --install onionfs ./helm
+```
+
+The chart uses a `checksum/config` annotation on each Deployment so `helm upgrade` automatically rolls pods whose config has changed.
 
 ## Architecture
 
