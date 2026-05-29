@@ -1,0 +1,19 @@
+{{- range .Values.agents }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  labels:
+    app: storeagent
+    agent: {{ .name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: storeagent
+    agent: {{ .name }}
+  ports:
+    - port: {{ .config.bind_port }}
+      targetPort: http
+      name: http
+{{- end }}

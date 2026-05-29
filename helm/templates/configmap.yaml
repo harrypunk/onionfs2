@@ -1,0 +1,10 @@
+{{- range .Values.agents }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}-config
+data:
+  config.json: |
+    {{ .config | toJson | indent 4 }}
+{{- end }}

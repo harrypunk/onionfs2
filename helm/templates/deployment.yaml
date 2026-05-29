@@ -1,0 +1,51 @@
+{{- range .Values.agents }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  labels:
+    app: storeagent
+    agent: {{ .name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storeagent
+      agent: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: storeagent
+        agent: {{ .name }}
+      annotations:
+        checksum/config: {{ .config | toJson | sha256sum }}
+    spec:
+      nodeSelector:
+        {{- toYaml .nodeSelector | nindent 8 }}
+      containers:
+        - name: storeagent
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .config.bind_port }}
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /opt/storeagent/config.json
+              subPath: config.json
+            {{- range .hostPaths }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .name }}-config
+        {{- range .hostPaths }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .hostPath }}
+            type: Directory
+        {{- end }}
+{{- end }}
