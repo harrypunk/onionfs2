@@ -1,6 +1,6 @@
 import { honoLogLayer } from "@loglayer/hono";
 import { Hono } from "hono";
-import { lastValueFrom, type Observable } from "rxjs";
+
 import type { AppConfig } from "@/config";
 import { log } from "@/logging";
 import fsRoutes from "@/routes/fs";
@@ -8,7 +8,7 @@ import mountRoutes from "@/routes/mount";
 import { InMemoryUploadSessionManager } from "@/services/upload-session";
 import type { Variables } from "@/types";
 
-export function createApp(config$: Observable<AppConfig>) {
+export function createApp(cfg: AppConfig) {
 	const app = new Hono<{ Variables: Variables }>();
 
 	// Request-scoped logging via LogLayer + Pino.
@@ -16,7 +16,6 @@ export function createApp(config$: Observable<AppConfig>) {
 
 	// Inject config into Hono context so routes can access it via c.get("config").
 	app.use(async (c, next) => {
-		const cfg = await lastValueFrom(config$);
 		c.set("config", cfg);
 		await next();
 	});

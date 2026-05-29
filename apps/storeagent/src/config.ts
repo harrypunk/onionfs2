@@ -3,6 +3,7 @@ const DEFAULT_CONFIG_PATH =
 
 export interface AppConfig {
 	bind_addr: string;
+	bind_port: number;
 	nats_server: string;
 	mounts: Record<string, string>;
 	node_id: string;

@@ -1,5 +1,6 @@
 {
-	"bind_addr": "0.0.0.0:3001",
+	"bind_addr": "0.0.0.0",
+	"bind_port": 3001,
 	"nats_server": "nats.lan:4222",
 	"mounts": {
 		"data1": "/data1",
