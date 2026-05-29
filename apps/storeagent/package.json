@@ -11,6 +11,7 @@
 		"@loglayer/transport-pino": "^3.0.3",
 		"hono": "^4.12.19",
 		"loglayer": "^9.1.1",
+		"nats": "^2.29.3",
 		"pino": "^10.3.1",
 		"rxjs": "^7.8.2",
 		"serialize-error": "^13.0.1"
