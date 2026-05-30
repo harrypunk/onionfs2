@@ -54,15 +54,34 @@ Follow a strict **3-layer architecture**:
 
 ## Tooling
 
+### Frontend (`apps/frontend`)
+
+Uses **ESLint** + **Prettier** (Svelte-aware).
+
+```sh
+cd apps/frontend
+bunx prettier --write .
+bunx eslint --fix .
+bunx svelte-check --tsconfig ./tsconfig.json
+```
+
+### StoreAgent (`apps/storeagent`)
+
+Uses **Biome**.
+
+```sh
+cd apps/storeagent
+bunx biome check --write .
+```
+
+### Type check & tests (all workspaces)
+
 ```sh
 # Type check
 bunx tsc --noEmit
-
-# Lint and format
-bunx biome check --write .
 
 # Run tests
 bun test
 ```
 
-Run all three in sequence before reporting completion.
+Run the relevant checks for each workspace you touched before reporting completion.
