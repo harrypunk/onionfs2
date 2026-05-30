@@ -1,12 +1,12 @@
 <script lang="ts">
-import type { NodeInfo } from "$lib/types";
-import NodeCard from "./NodeCard.svelte";
+	import type { NodeInfo } from "$lib/types";
+	import NodeCard from "./NodeCard.svelte";
 
-interface Props {
-	nodes: Map<string, NodeInfo>;
-}
+	interface Props {
+		nodes: Map<string, NodeInfo>;
+	}
 
-let { nodes }: Props = $props();
+	let { nodes }: Props = $props();
 </script>
 
 <section class="section">

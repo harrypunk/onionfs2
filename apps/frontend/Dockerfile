@@ -13,15 +13,13 @@ COPY packages/shared/package.json ./packages/shared/
 # Install dependencies
 RUN bun install --registry=https://registry.npmmirror.com --frozen-lockfile
 
-
 # Copy source
-COPY apps/storeagent/src ./apps/storeagent/src
-COPY apps/storeagent/tsconfig.json ./apps/storeagent/
+COPY apps/frontend ./apps/frontend
 COPY packages/shared ./packages/shared
 
-# Build the server bundle
-WORKDIR /app/apps/storeagent
-RUN bun build src/index.ts --target=bun --outfile=dist/index.js
+# Build
+WORKDIR /app/apps/frontend
+RUN bun run build
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────
 FROM oven/bun:${BUN_VERSION}-alpine AS runtime
@@ -29,12 +27,12 @@ FROM oven/bun:${BUN_VERSION}-alpine AS runtime
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -g 1001 -S storeagent && adduser -S storeagent -u 1001 -G storeagent
+RUN addgroup -g 1001 -S frontend && adduser -S frontend -u 1001 -G frontend
 
-# Copy only the built bundle
-COPY --from=builder --chown=storeagent:storeagent /app/apps/storeagent/dist/index.js ./
+# Copy built app
+COPY --from=builder --chown=frontend:frontend /app/apps/frontend/build ./
 
-USER storeagent
+USER frontend
 
 EXPOSE 3000
 CMD ["bun", "run", "index.js"]
