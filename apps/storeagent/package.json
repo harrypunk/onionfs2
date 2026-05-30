@@ -8,6 +8,7 @@
 		"format": "biome format --write ."
 	},
 	"dependencies": {
+		"@ononfs2/shared": "workspace:*",
 		"@loglayer/transport-pino": "^3.0.3",
 		"hono": "^4.12.19",
 		"loglayer": "^9.1.1",

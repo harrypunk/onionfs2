@@ -1,19 +1,15 @@
 <script lang="ts">
-	import { NodeState } from "$lib/state/nodes.svelte";
-	import { mockDataSource } from "$lib/datasource/mock";
-	import NodeOverview from "$lib/components/NodeOverview.svelte";
+import NodeOverview from "$lib/components/NodeOverview.svelte";
+import { NatsNodeDataSource } from "$lib/datasource/nats";
+import { NodeState } from "$lib/state/nodes.svelte";
 
-	const state = new NodeState(mockDataSource);
-	state.load();
+const natsUrl = import.meta.env.ONIONFS_NATS_URL || "ws://nats.lan:80";
+const dataSource = new NatsNodeDataSource(natsUrl);
+const state = new NodeState(dataSource);
+state.load();
 </script>
 
-{#if state.loading}
-	<section class="section">
-		<div class="container">
-			<p class="has-text-grey">Loading nodes…</p>
-		</div>
-	</section>
-{:else if state.error}
+{#if state.error}
 	<section class="section">
 		<div class="container">
 			<div class="notification is-danger">

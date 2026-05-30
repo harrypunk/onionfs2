@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { NodeInfo } from "$lib/types";
-	import NodeCard from "./NodeCard.svelte";
+import type { NodeInfo } from "$lib/types";
+import NodeCard from "./NodeCard.svelte";
 
-	interface Props {
-		nodes: NodeInfo[];
-	}
+interface Props {
+	nodes: Map<string, NodeInfo>;
+}
 
-	let { nodes }: Props = $props();
+let { nodes }: Props = $props();
 </script>
 
 <section class="section">
@@ -16,7 +16,7 @@
 
 		<div class="fixed-grid has-1-cols">
 			<div class="grid">
-				{#each nodes as node (node.id)}
+				{#each nodes as [id, node] (id)}
 					<div class="cell">
 						<NodeCard {node} />
 					</div>

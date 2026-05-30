@@ -1,39 +1,24 @@
-import { of } from "rxjs";
-import type { NodeDataSource } from "./types";
+import { concat, NEVER, of } from "rxjs";
 import type { NodeInfo } from "$lib/types";
+import type { NodeDataSource } from "./types";
 
 const MOCK_NODES: NodeInfo[] = [
 	{
 		id: "desktop3",
-		clusterUrl: "desktop3.svc.local",
 		publicUrl: "agent1.lan:5001",
-		status: "online",
-		mounts: [
-			{ name: "data1", path: "/data1", size: "4.0 TB" },
-			{ name: "nvme1", path: "/mnt/nvme1", size: "1.9 TB" },
-		],
+		lastSeen: Date.now(),
+		mounts: [{ name: "data1" }, { name: "nvme1" }],
 	},
 	{
 		id: "rpi4-node1",
-		clusterUrl: "rpi4-node1.svc.local",
 		publicUrl: "rpi4.lan:5001",
-		status: "online",
-		mounts: [{ name: "usb1", path: "/mnt/usb1", size: "465 GB" }],
-	},
-	{
-		id: "rpi4-node2",
-		clusterUrl: "rpi4-node2.svc.local",
-		publicUrl: "rpi4-2.lan:5001",
-		status: "offline",
-		mounts: [
-			{ name: "usb1", path: "/mnt/usb1", size: "465 GB" },
-			{ name: "sata1", path: "/mnt/sata1", size: "1.8 TB" },
-		],
+		lastSeen: Date.now(),
+		mounts: [{ name: "usb1" }],
 	},
 ];
 
 export const mockDataSource: NodeDataSource = {
 	fetch() {
-		return of(structuredClone(MOCK_NODES));
+		return concat(of(MOCK_NODES[0]), of(MOCK_NODES[1]), NEVER);
 	},
 };

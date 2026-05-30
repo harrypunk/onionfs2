@@ -12,8 +12,6 @@
 	<thead>
 		<tr>
 			<th>Mount</th>
-			<th>Path</th>
-			<th class="has-text-right">Size</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -27,8 +25,6 @@
 						<span>{mount.name}</span>
 					</span>
 				</td>
-				<td class="has-text-grey">{mount.path}</td>
-				<td class="has-text-right has-text-weight-semibold">{mount.size}</td>
 			</tr>
 		{/each}
 	</tbody>

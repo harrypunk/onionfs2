@@ -15,17 +15,11 @@
 			<div class="level-left">
 				<div>
 					<p class="title is-5">{node.id}</p>
-					<p class="subtitle is-6 has-text-grey">{node.clusterUrl}</p>
+					<p class="subtitle is-6 has-text-grey">{node.publicUrl}</p>
 				</div>
 			</div>
 			<div class="level-right">
-				<span
-					class="tag is-medium"
-					class:is-success={node.status === "online"}
-					class:is-danger={node.status === "offline"}
-				>
-					{node.status}
-				</span>
+				<span class="tag is-medium">{node.lastSeen}</span>
 			</div>
 		</div>
 

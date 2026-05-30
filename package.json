@@ -9,5 +9,5 @@
 		"format": "bun run --filter storeagent format && bun run --filter frontend format",
 		"check": "bun run --filter frontend check"
 	},
-	"workspaces": ["apps/*"]
+	"workspaces": ["apps/*", "packages/*"]
 }
