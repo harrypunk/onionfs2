@@ -1,0 +1,18 @@
+# Frontend ClusterIP Service — backs the Envoy Gateway HTTPRoute.
+{{- if .Values.frontend }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: onionfs-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: onionfs-frontend
+  ports:
+    - port: {{ .Values.frontend.service.port | default 3000 }}
+      targetPort: http
+      name: http
+{{- end }}

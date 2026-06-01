@@ -1,77 +1,88 @@
+# Global image settings — registry and pull policy shared across all components.
 image:
-  repository: storeagent
-  tag: latest
+  repository: git.blackpink.io/onionfs
   pullPolicy: IfNotPresent
 
-agents:
-  - name: agent1
-    nodeSelector:
-      kubernetes.io/hostname: k3s-ubuntu
-    config:
-      bind_addr: "0.0.0.0"
-      bind_port: 3001
-      nats_server: "nats.lan:4222"
-      node_id: "agent1"
-      cluster_url: "agent1.svc.local"
-      public_url: "agent1.lan:5001"
-      announce_interval_sec: 300
-      mounts:
-        data1: "/data1"
-    hostPaths:
-      - name: data1
-        hostPath: /data1
-        mountPath: /data1
+# NATS server endpoint used by all storeagents for JetStream coordination.
+nats:
+  server: "nats.lan:4222"
 
-  - name: agent2
-    nodeSelector:
-      kubernetes.io/hostname: k3s-fedora
-    config:
-      bind_addr: "0.0.0.0"
-      bind_port: 3002
-      nats_server: "nats.lan:4222"
-      node_id: "agent2"
-      cluster_url: "agent2.svc.local"
-      public_url: "agent2.lan:5002"
-      announce_interval_sec: 300
-      mounts:
-        data1: "/data1"
-    hostPaths:
-      - name: data1
-        hostPath: /data1
-        mountPath: /data1
+storeagent:
+  image:
+    name: storeagent
+    tag: latest
+  agents:
+    - name: agent1
+      hostname: k3s-ubuntu
+      config:
+        bind_addr: "0.0.0.0"
+        bind_port: 3001
+        node_id: "agent1"
+        public_url: "agent1.lan:5001"
+        announce_interval_sec: 300
+        mounts:
+          data1: "/data1"
+      hostPaths:
+        - name: data1
+          hostPath: /data1
+          mountPath: /data1
 
-  - name: backup-nvme
-    nodeSelector:
-      kubernetes.io/hostname: k3s-node3
-    config:
-      bind_addr: "0.0.0.0"
-      bind_port: 3003
-      nats_server: "nats.lan:4222"
-      node_id: "backup-nvme"
-      cluster_url: "backup-nvme.svc.local"
-      public_url: "backup-nvme.lan:5003"
-      announce_interval_sec: 300
-      mounts:
-        nvme1: "/mnt/nvme1"
-    hostPaths:
-      - name: nvme1
-        hostPath: /mnt/nvme1
-        mountPath: /mnt/nvme1
+    - name: agent2
+      hostname: k3s-fedora
+      config:
+        bind_addr: "0.0.0.0"
+        bind_port: 3002
+        node_id: "agent2"
+        public_url: "agent2.lan:5002"
+        announce_interval_sec: 300
+        mounts:
+          data1: "/data1"
+      hostPaths:
+        - name: data1
+          hostPath: /data1
+          mountPath: /data1
 
-  - name: backup-hdd
-    nodeSelector:
-      kubernetes.io/hostname: k3s-node3
-    config:
-      bind_addr: "0.0.0.0"
-      bind_port: 3004
-      nats_server: "nats.lan:4222"
-      node_id: "backup-hdd"
-      cluster_url: "backup-hdd.svc.local"
-      public_url: "backup-hdd.lan:5004"
-      announce_interval_sec: 300
-      mounts:
-        data2: "/data2"
-    hostPaths:
-      - name: data2
-        hostPath: /data2
-        mountPath: /data2
+    - name: backup-nvme
+      hostname: k3s-node3
+      config:
+        bind_addr: "0.0.0.0"
+        bind_port: 3003
+        node_id: "backup-nvme"
+        public_url: "backup-nvme.lan:5003"
+        announce_interval_sec: 300
+        mounts:
+          nvme1: "/mnt/nvme1"
+      hostPaths:
+        - name: nvme1
+          hostPath: /mnt/nvme1
+          mountPath: /mnt/nvme1
+
+    - name: backup-hdd
+      hostname: k3s-node3
+      config:
+        bind_addr: "0.0.0.0"
+        bind_port: 3004
+        node_id: "backup-hdd"
+        public_url: "backup-hdd.lan:5004"
+        announce_interval_sec: 300
+        mounts:
+          data2: "/data2"
+      hostPaths:
+        - name: data2
+          hostPath: /data2
+          mountPath: /data2
+
+frontend:
+  image:
+    name: frontend
+    tag: latest
+  replicaCount: 1
+  natsUrl: "ws://nats.lan:80"
+  service:
+    port: 3000
+  httproute:
+    gatewayName: eg
+    gatewayNamespace: envoy-gateway-system
+    hostnames:
+      - "onionfs.lan"
+    path: /

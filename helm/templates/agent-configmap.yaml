@@ -1,0 +1,17 @@
+# Per-agent ConfigMap that injects two computed fields into the storeagent config:
+#   - cluster_url  : derived from the k8s Service DNS name (<name>.<namespace>.svc.cluster.local)
+#   - nats_server  : pulled from the global $.Values.nats.server so it isn't duplicated per agent
+# Any key explicitly defined in the agent's .config block will override these defaults.
+{{- range .Values.storeagent.agents }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}-config
+data:
+  config.json: |
+    {{- $clusterUrl := printf "%s.%s.svc.cluster.local" .name $.Release.Namespace }}
+    {{- $overrides := dict "cluster_url" $clusterUrl "nats_server" $.Values.nats.server }}
+    {{- $cfg := merge $overrides (deepCopy .config) }}
+    {{ $cfg | toJson | indent 4 }}
+{{- end }}

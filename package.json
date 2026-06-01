@@ -1,5 +1,5 @@
 {
-	"name": "onon-fs2",
+	"name": "onionfs",
 	"private": true,
 	"scripts": {
 		"dev:back": "bun run --filter storeagent dev",

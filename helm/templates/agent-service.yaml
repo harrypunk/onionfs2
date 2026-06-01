@@ -1,4 +1,6 @@
-{{- range .Values.agents }}
+# One ClusterIP Service per agent. The Service name becomes the agent's cluster_url
+# (resolved as <name>.<namespace>.svc.cluster.local inside the cluster).
+{{- range .Values.storeagent.agents }}
 ---
 apiVersion: v1
 kind: Service

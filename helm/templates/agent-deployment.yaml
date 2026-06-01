@@ -1,4 +1,8 @@
-{{- range .Values.agents }}
+# One Deployment per agent defined in .Values.storeagent.agents.
+# Each pod is pinned to a specific cluster node via nodeSelector (kubernetes.io/hostname)
+# and mounts hostPath volumes for direct filesystem access. The checksum/config annotation
+# ensures pods are rolled whenever the agent's ConfigMap changes.
+{{- range .Values.storeagent.agents }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -22,10 +26,10 @@ spec:
         checksum/config: {{ .config | toJson | sha256sum }}
     spec:
       nodeSelector:
-        {{- toYaml .nodeSelector | nindent 8 }}
+        kubernetes.io/hostname: {{ .hostname }}
       containers:
         - name: storeagent
-          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          image: "{{ $.Values.image.repository }}/{{ $.Values.storeagent.image.name }}:{{ $.Values.storeagent.image.tag }}"
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .config.bind_port }}

@@ -1,0 +1,32 @@
+# Frontend Deployment — serves the SvelteKit UI via adapter-node.
+# The ONIONFS_NATS_URL env var is injected from values so the UI knows where to
+# reach the NATS WebSocket gateway. Set via .Values.frontend.natsUrl.
+{{- if .Values.frontend }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: onionfs-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: onionfs-frontend
+  template:
+    metadata:
+      labels:
+        app: onionfs-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.repository }}/{{ .Values.frontend.image.name }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: ONIONFS_NATS_URL
+              value: {{ .Values.frontend.natsUrl | quote }}
+{{- end }}

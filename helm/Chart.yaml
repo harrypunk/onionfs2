@@ -1,6 +1,6 @@
 apiVersion: v2
-name: storeagent
-description: OnionFS storeagent deployment for k3s home lab
+name: onionfs
+description: OnionFS deployment for k3s home lab (storeagent + frontend)
 type: application
 version: 0.1.0
 appVersion: "0.1.0"

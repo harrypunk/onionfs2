@@ -1,0 +1,19 @@
+# Patterns to ignore when building Helm packages.
+# Supports shell glob matching, relative path matching, and negation (prefixed with !).
+
+# VCS
+.git/
+.gitignore
+
+# Build artifacts
+*.tgz
+*.tar.gz
+
+# Temporary / editor files
+*.tmp
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store

@@ -1,7 +1,8 @@
-.PHONY: build-all run-all push-all stop-all
+.PHONY: build-all run-all push-all stop-all helm-package helm-push
 
 REGISTRY ?= git.blackpink.io/onionfs
 BUN_VERSION := 1.3.13
+HELM_REGISTRY ?= $(REGISTRY)
 
 # App configs: name, dockerfile, port
 FRONT_NAME := frontend
@@ -36,3 +37,10 @@ build-all: build-front build-agent
 run-all: run-agent run-front
 push-all: push-front push-agent
 stop-all: stop-agent stop-front
+
+# Helm chart packaging and OCI publish
+helm-package:
+	helm package ./helm --destination build/
+
+helm-push: helm-package
+	helm push build/onionfs-*.tgz oci://$(HELM_REGISTRY)
