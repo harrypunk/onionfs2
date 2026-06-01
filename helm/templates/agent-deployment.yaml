@@ -30,7 +30,6 @@ spec:
       containers:
         - name: storeagent
           image: "{{ $.Values.image.repository }}/{{ $.Values.storeagent.image.name }}:{{ $.Values.storeagent.image.tag }}"
-          imagePullPolicy: {{ $.Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .config.bind_port }}
               name: http

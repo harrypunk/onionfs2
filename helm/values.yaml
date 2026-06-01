@@ -1,7 +1,6 @@
 # Global image settings — registry and pull policy shared across all components.
 image:
   repository: git.blackpink.io/onionfs
-  pullPolicy: IfNotPresent
 
 # NATS server endpoint used by all storeagents for JetStream coordination.
 nats:
@@ -76,10 +75,7 @@ frontend:
   image:
     name: frontend
     tag: latest
-  replicaCount: 1
   natsUrl: "ws://nats.lan:80"
-  service:
-    port: 3000
   httproute:
     gatewayName: eg
     gatewayNamespace: envoy-gateway-system

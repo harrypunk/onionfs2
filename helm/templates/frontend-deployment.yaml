@@ -10,7 +10,7 @@ metadata:
   labels:
     app: onionfs-frontend
 spec:
-  replicas: {{ .Values.frontend.replicaCount | default 1 }}
+  replicas: 1
   selector:
     matchLabels:
       app: onionfs-frontend
@@ -22,7 +22,6 @@ spec:
       containers:
         - name: frontend
           image: "{{ .Values.image.repository }}/{{ .Values.frontend.image.name }}:{{ .Values.frontend.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 3000
               name: http

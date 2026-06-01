@@ -31,10 +31,21 @@ WORKDIR /app
 # Create non-root user
 RUN addgroup -g 1001 -S storeagent && adduser -S storeagent -u 1001 -G storeagent
 
-# Copy only the built bundle
-COPY --from=builder --chown=storeagent:storeagent /app/apps/storeagent/dist/index.js ./
+# Copy workspace manifests and install production deps
+COPY --chown=storeagent:storeagent package.json bun.lock ./
+COPY --chown=storeagent:storeagent apps/frontend/package.json ./apps/frontend/
+COPY --chown=storeagent:storeagent apps/storeagent/package.json ./apps/storeagent/
+COPY --chown=storeagent:storeagent packages/shared/package.json ./packages/shared/
+RUN bun install --registry=https://registry.npmmirror.com --frozen-lockfile --production
+
+# Copy source
+COPY --chown=storeagent:storeagent apps/storeagent/src ./apps/storeagent/src
+COPY --chown=storeagent:storeagent apps/storeagent/tsconfig.json ./apps/storeagent/
+COPY --chown=storeagent:storeagent packages/shared ./packages/shared
 
 USER storeagent
 
+WORKDIR /app/apps/storeagent
+
 EXPOSE 3000
-CMD ["bun", "run", "index.js"]
+CMD ["bun", "run", "src/index.ts"]
