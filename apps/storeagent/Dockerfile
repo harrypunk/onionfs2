@@ -47,5 +47,7 @@ USER storeagent
 
 WORKDIR /app/apps/storeagent
 
+ENV NODE_ENV=production
+
 EXPOSE 3000
 CMD ["bun", "run", "src/index.ts"]
