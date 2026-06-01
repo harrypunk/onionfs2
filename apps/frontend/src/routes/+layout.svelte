@@ -7,7 +7,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>onon-fs2</title>
+	<title>onionfs</title>
 </svelte:head>
 
 {@render children()}
