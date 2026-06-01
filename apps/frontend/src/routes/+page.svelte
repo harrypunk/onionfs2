@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import NodeOverview from "$lib/components/NodeOverview.svelte";
 	import { NatsNodeDataSource } from "$lib/datasource/nats";
 	import { NodeState } from "$lib/state/nodes.svelte";
@@ -6,7 +7,10 @@
 	const natsUrl = import.meta.env.ONIONFS_NATS_URL || "ws://nats.lan:80";
 	const dataSource = new NatsNodeDataSource(natsUrl);
 	const state = new NodeState(dataSource);
-	state.load();
+
+	onMount(() => {
+		state.load();
+	});
 </script>
 
 {#if state.error}
