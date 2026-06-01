@@ -12,7 +12,7 @@ spec:
   selector:
     app: onionfs-frontend
   ports:
-    - port: 3000
+    - port: {{ .Values.frontend.service.port | default 3000 }}
       targetPort: http
       name: http
 {{- end }}
