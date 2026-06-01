@@ -367,8 +367,7 @@ Heartbeats run independently of the HTTP server — a NATS failure is logged but
 ## Deployment
 
 ```sh
-helm repo add onionfs https://git.blackpink.io/onionfs/charts
-helm install onionfs onionfs/onionfs
+helm install onionfs oci://git.blackpink.io/onionfs/onionfs --version 0.1.0
 ```
 
 ## Architecture
