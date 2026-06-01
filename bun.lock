@@ -9,7 +9,7 @@
       "name": "frontend",
       "version": "0.0.1",
       "dependencies": {
-        "@ononfs2/shared": "workspace:*",
+        "@onionfs2/shared": "workspace:*",
         "nats.ws": "^1.29.3",
         "rxjs": "^7.8.2",
       },
@@ -37,7 +37,7 @@
       "name": "storeagent",
       "dependencies": {
         "@loglayer/transport-pino": "^3.0.3",
-        "@ononfs2/shared": "workspace:*",
+        "@onionfs2/shared": "workspace:*",
         "hono": "^4.12.19",
         "loglayer": "^9.1.1",
         "nats": "^2.29.3",
@@ -53,7 +53,7 @@
       },
     },
     "packages/shared": {
-      "name": "@ononfs2/shared",
+      "name": "@onionfs2/shared",
       "version": "0.0.1",
     },
   },
@@ -136,7 +136,7 @@
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.1.4", "https://mirrors.cloud.tencent.com/npm/@napi-rs/wasm-runtime/-/wasm-runtime-1.1.4.tgz", { "dependencies": { "@tybys/wasm-util": "^0.10.1" }, "peerDependencies": { "@emnapi/core": "^1.7.1", "@emnapi/runtime": "^1.7.1" } }, "sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow=="],
 
-    "@ononfs2/shared": ["@ononfs2/shared@workspace:packages/shared"],
+    "@onionfs2/shared": ["@onionfs2/shared@workspace:packages/shared"],
 
     "@oxc-project/types": ["@oxc-project/types@0.132.0", "https://mirrors.cloud.tencent.com/npm/@oxc-project/types/-/types-0.132.0.tgz", {}, "sha512-FESMOxil5Se014ui/Eq8fT5uHJo6nIRwH0PfJrZJXs6Gek3ZVFOrpUv3YIZT20m+extU98Hg1Ym72U58rlsxUQ=="],
 

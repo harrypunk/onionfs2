@@ -1,4 +1,4 @@
-import { type AnnounceMessage, NATS_STREAMS } from "@ononfs2/shared";
+import { type AnnounceMessage, NATS_STREAMS } from "@onionfs2/shared";
 import { AckPolicy, connect, DeliverPolicy, JSONCodec } from "nats.ws";
 import { EMPTY, from } from "rxjs";
 import { catchError, finalize, map, switchMap, tap } from "rxjs/operators";

@@ -2,7 +2,7 @@ import {
 	type AnnounceMessage,
 	NATS_STREAMS,
 	NATS_SUBJECTS,
-} from "@ononfs2/shared";
+} from "@onionfs2/shared";
 import {
 	JSONCodec,
 	type NatsConnection,
