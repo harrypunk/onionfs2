@@ -34,17 +34,33 @@ function buildMessage(config: AppConfig): AnnounceMessage {
 	};
 }
 
+/**
+ * Creates an observable that periodically publishes heartbeat announcements
+ * to a NATS JetStream stream.
+ *
+ * On startup, it ensures the `agent_heartbeats` stream exists with a
+ * `max_age` of 2× the announce interval. This gives the frontend enough
+ * time to discover the latest heartbeat even if it connects shortly after
+ * an agent published.
+ */
 export function createAnnounceHeartbeat(
 	config: AppConfig,
 	connection: NatsConnection,
 ): Observable<AnnounceMessage> {
+	// Heartbeat period in milliseconds.
 	const periodMs = config.announce_interval_sec * 1000;
-	const maxAgeNs = config.announce_interval_sec * 1_000_000_000;
+
+	// Keep messages alive for twice the announce interval so the frontend
+	// can always find at least one heartbeat when it connects.
+	const maxAgeNs = config.announce_interval_sec * 2 * 1_000_000_000;
+
 	const js = connection.jetstream();
 
+	// ── Setup: ensure stream exists with correct max_age ──────────────────
 	const setup$ = from(connection.jetstreamManager()).pipe(
 		switchMap((jsm) =>
 			from(jsm.streams.info(NATS_STREAMS.AGENT_HEARTBEATS)).pipe(
+				// Stream doesn't exist yet — create it.
 				catchError(() =>
 					from(
 						jsm.streams.add({
@@ -61,6 +77,23 @@ export function createAnnounceHeartbeat(
 						}),
 					),
 				),
+				// Stream exists — update max_age if it changed (e.g. after config edit).
+				switchMap((info) => {
+					if (info.config.max_age !== maxAgeNs) {
+						return from(
+							jsm.streams.update(NATS_STREAMS.AGENT_HEARTBEATS, {
+								...info.config,
+								max_age: maxAgeNs,
+							}),
+						).pipe(
+							catchError((err) => {
+								log.withError(err).warn("Stream update failed");
+								return EMPTY;
+							}),
+						);
+					}
+					return EMPTY;
+				}),
 			),
 		),
 		catchError((err) => {
@@ -70,6 +103,7 @@ export function createAnnounceHeartbeat(
 		ignoreElements(),
 	);
 
+	// ── Heartbeat loop: publish every `periodMs` ──────────────────────────
 	const heartbeat$ = timer(0, periodMs).pipe(
 		map(() => buildMessage(config)),
 		mergeMap((msg) =>
@@ -87,5 +121,6 @@ export function createAnnounceHeartbeat(
 		}),
 	);
 
+	// Run setup first, wait 500ms for stream to settle, then start heartbeats.
 	return concat(setup$, timer(500).pipe(ignoreElements()), heartbeat$);
 }
