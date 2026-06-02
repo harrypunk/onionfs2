@@ -4,7 +4,7 @@ image:
 
 # NATS server endpoint used by all storeagents for JetStream coordination.
 nats:
-  server: "nats.lan:4222"
+  server: "local-nats.nats-system.svc.cluster.local:4222"
 
 storeagent:
   image:
