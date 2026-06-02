@@ -40,6 +40,7 @@ stop-all: stop-agent stop-front
 
 # Helm chart packaging and OCI publish
 helm-package:
+	@rm -f build/onionfs-*.tgz
 	helm package ./helm --destination build/
 
 helm-push: helm-package
