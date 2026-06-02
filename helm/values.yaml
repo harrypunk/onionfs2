@@ -76,8 +76,6 @@ frontend:
     name: frontend
     tag: latest
   natsUrl: "ws://nats.lan:80"
-  service:
-    port: 3000
   httproute:
     gatewayName: eg
     gatewayNamespace: envoy-gateway-system
