@@ -49,6 +49,6 @@
 			</div>
 		</div>
 
-		<MountTable mounts={node.mounts} />
+		<MountTable nodeId={node.id} mounts={node.mounts} />
 	</div>
 </div>

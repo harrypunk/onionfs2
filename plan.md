@@ -6,10 +6,9 @@ Last updated: 2026-06-24
 
 The project is a functional local prototype of a distributed filesystem agent.
 The backend can serve files, accept uploads, and announce itself over NATS.
-The frontend can display a live node overview from those announcements.
-The stack is deployed via Helm on k3s.
+The frontend can display a live node overview and browse the root directory of each node mount.
 
-Working tree is clean; last commit is `20b7283` (docs extraction).
+Working tree is clean; last commit is `38ab20b` (plan.md).
 
 ## What's Done
 
@@ -52,6 +51,9 @@ Working tree is clean; last commit is `20b7283` (docs extraction).
   - Connects to NATS over WebSocket (`nats.ws`)
   - Consumes `agent_heartbeats` JetStream consumer
   - Displays each node's ID, public URL, elapsed time since last heartbeat, and mount list
+- **Mount browser**
+  - Clicking a mount navigates to `/{node}/{mount}/`
+  - Page discovers the node via NATS and lists the mount root via the agent's `GET /fs/list` API
 - **Components**
   - `NodeOverview`, `NodeCard`, `MountTable`
 - **State**
@@ -67,7 +69,8 @@ Working tree is clean; last commit is `20b7283` (docs extraction).
 These are the current limitations and areas for future work:
 
 - **Cross-node file operations** — the API only reads/writes the local node's filesystem. There is no node-to-node proxying, replication, or distributed routing yet.
-- **Frontend filesystem browser** — the UI shows nodes/mounts but cannot list directories or download files.
+- **Subdirectory navigation** — the mount browser only lists the mount root; clicking into folders is not implemented.
+- **File downloads from the UI** — the browser page lists entries but cannot open or download files yet.
 - **No authentication or authorization** — all API endpoints are open.
 - **In-memory upload sessions** — multipart session state is stored in `InMemoryUploadSessionManager`; restarting the agent loses active uploads.
 - **No file deletion/rename API** — only list/get/upload operations exist.
@@ -76,6 +79,8 @@ These are the current limitations and areas for future work:
 ## Recent Changes
 
 - Extracted README documentation into `docs/` and simplified `README.md`.
+- Added CORS middleware to the agent so the browser can call its HTTP API directly.
+- Added a mount browser page at `/{node}/{mount}/` that lists the mount root.
 - Storeagent updates JetStream `max_age` on startup to match `2× announce_interval_sec`.
 
 ## Next Steps

@@ -1,5 +1,6 @@
 import { honoLogLayer } from "@loglayer/hono";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import type { AppConfig } from "@/config";
 import { log } from "@/logging";
@@ -10,6 +11,9 @@ import type { Variables } from "@/types";
 
 export function createApp(cfg: AppConfig) {
 	const app = new Hono<{ Variables: Variables }>();
+
+	// Allow browser clients on the home LAN to call the agent API.
+	app.use(cors());
 
 	// Request-scoped logging via LogLayer + Pino.
 	app.use(honoLogLayer({ instance: log }));
