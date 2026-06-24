@@ -22,3 +22,32 @@ export function parseRangeHeader(
 	if (end !== undefined && start > end) return undefined;
 	return { start, end };
 }
+
+/** Result of clamping a requested range to a maximum chunk size. */
+export interface CappedRange {
+	start: number;
+	end: number;
+	contentLength: number;
+	rangeSpec: string;
+}
+
+/**
+ * Clamp a requested byte range to a maximum chunk size.
+ *
+ * The caller is responsible for returning 416 if `range.start >= size`.
+ */
+export function capRange(
+	size: number,
+	range: ByteRange,
+	maxChunk: number,
+): CappedRange {
+	const maxEnd = Math.min(size - 1, range.start + maxChunk - 1);
+	const end = range.end !== undefined ? Math.min(range.end, maxEnd) : maxEnd;
+	const contentLength = end - range.start + 1;
+	return {
+		start: range.start,
+		end,
+		contentLength,
+		rangeSpec: `${range.start}-${end}`,
+	};
+}

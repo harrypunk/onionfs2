@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { firstValueFrom } from "rxjs";
 import { fileHeaders } from "@/lib/file-response";
-import { parseRangeHeader } from "@/lib/range";
+import { capRange, parseRangeHeader } from "@/lib/range";
 import { resolvePath } from "@/middleware/resolve-path";
 import { validatePath } from "@/middleware/validate-path";
 import { fsErrorResponse } from "@/routes/fs-error-handler";
@@ -13,6 +13,9 @@ import {
 	uploadPart,
 } from "@/services/upload";
 import type { Variables } from "@/types";
+
+/** Maximum bytes served for a single range request. 32 MB works well over LAN. */
+const MAX_RANGE_CHUNK = 32 * 1024 * 1024;
 
 /** Extended variables available inside `/fs` routes after middleware runs. */
 type FsVariables = Variables & {
@@ -135,23 +138,32 @@ fsRoutes.get("/get", (c) => {
 	const realPath = c.var.realPath;
 	const range = parseRangeHeader(c.req.header("range"));
 
-	return firstValueFrom(getFileContent(realPath, range)).then(
+	const effectiveRange = range
+		? {
+				start: range.start,
+				end:
+					range.end !== undefined
+						? Math.min(range.end, range.start + MAX_RANGE_CHUNK - 1)
+						: range.start + MAX_RANGE_CHUNK - 1,
+			}
+		: undefined;
+
+	return firstValueFrom(getFileContent(realPath, effectiveRange)).then(
 		({ stream, size }) => {
-			if (range) {
-				if (range.start >= size) {
+			if (effectiveRange) {
+				if (effectiveRange.start >= size) {
 					return c.body(null, 416, {
 						"Content-Range": `bytes */${size}`,
 					});
 				}
-				const actualEnd = Math.min(range.end ?? size - 1, size - 1);
-				const contentLength = actualEnd - range.start + 1;
+				const { contentLength, rangeSpec } = capRange(
+					size,
+					effectiveRange,
+					MAX_RANGE_CHUNK,
+				);
 				return new Response(stream, {
 					status: 206,
-					headers: fileHeaders(
-						size,
-						contentLength,
-						`${range.start}-${actualEnd}`,
-					),
+					headers: fileHeaders(size, contentLength, rangeSpec),
 				});
 			}
 			return new Response(stream, {
