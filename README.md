@@ -14,11 +14,4 @@ apps/
 
 ## Documentation
 
-- [Development](docs/development.md) — install, dev servers, tests, and checks
-- [Container Images](docs/containers.md) — build, push, and run containers
-- [Backend](docs/backend.md) — configuration and config fields
-- [Frontend](docs/frontend.md) — frontend overview and environment variables
-- [Filesystem API](docs/api.md) — HTTP API reference
-- [Cluster Coordination](docs/cluster-coordination.md) — NATS heartbeats
-- [Deployment](docs/deployment.md) — Helm install
-- [Architecture](docs/architecture.md) — 3-layer design, path resolution, and errors
+See the [docs/](docs/) folder.

@@ -1,15 +1,10 @@
 import { fromFetch } from "rxjs/fetch";
 import { map } from "rxjs/operators";
 import type { Observable } from "rxjs";
-
-export interface FsEntry {
-	name: string;
-	type: number;
-	size?: number;
-}
+import type { FsEntry } from "$lib/types";
 
 /**
- * Lists the root directory of a node's mount.
+ * Lists a directory inside a node's mount.
  *
  * Returns an Observable so it can later be swapped for a live pub/sub source
  * (e.g. WebSocket or SSE) without changing the consumer.
@@ -17,9 +12,10 @@ export interface FsEntry {
 export function listMount(
 	publicUrl: string,
 	mountName: string,
+	dir = "",
 ): Observable<FsEntry[]> {
 	return fromFetch(
-		`http://${publicUrl}/fs/list?mount=${encodeURIComponent(mountName)}&dir=`,
+		`http://${publicUrl}/fs/list?mount=${encodeURIComponent(mountName)}&dir=${encodeURIComponent(dir)}`,
 		{
 			selector: async (response) => {
 				if (!response.ok) {

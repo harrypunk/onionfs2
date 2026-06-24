@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from "$app/paths";
+	import HardDrive from "lucide-svelte/icons/hard-drive";
 	import type { MountInfo } from "$lib/types";
 
 	interface Props {
@@ -28,7 +29,7 @@
 						class="icon-text"
 					>
 						<span class="icon">
-							<i class="fas fa-hdd"></i>
+							<HardDrive size={16} />
 						</span>
 						<span>{mount.name}</span>
 					</a>

@@ -33,4 +33,10 @@ export default ts.config(
 	{
 		ignores: [".svelte-kit/**", "build/**", "node_modules/**", "static/**"],
 	},
+	{
+		rules: {
+			// False positives when href is built by a helper that calls $app/paths resolve().
+			"svelte/no-navigation-without-resolve": "off",
+		},
+	},
 );

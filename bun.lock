@@ -10,6 +10,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@onionfs2/shared": "workspace:*",
+        "lucide-svelte": "^1.0.1",
         "nats.ws": "^1.29.3",
         "rxjs": "^7.8.2",
       },
@@ -479,6 +480,8 @@
     "lodash.merge": ["lodash.merge@4.6.2", "https://mirrors.cloud.tencent.com/npm/lodash.merge/-/lodash.merge-4.6.2.tgz", {}, "sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ=="],
 
     "loglayer": ["loglayer@9.1.1", "https://mirrors.cloud.tencent.com/npm/loglayer/-/loglayer-9.1.1.tgz", { "dependencies": { "@loglayer/context-manager": "2.0.2", "@loglayer/log-level-manager": "2.0.2", "@loglayer/plugin": "3.0.2", "@loglayer/shared": "4.1.0", "@loglayer/transport": "3.0.3" } }, "sha512-K+mkZtX/MwXT8M3qwN7W5MqQeFIroHtiP1WRKGpEjMrBvAgZ8xeI3NPYQrLWkw+75AjvSxlwXJGfMHbtlTzAFw=="],
+
+    "lucide-svelte": ["lucide-svelte@1.0.1", "https://registry.npmmirror.com/lucide-svelte/-/lucide-svelte-1.0.1.tgz", { "peerDependencies": { "svelte": "^3 || ^4 || ^5.0.0-next.42" } }, "sha512-WvzZgk0pqzgda+AErLvgWxHkfg/+GgUwqKMRHvzt0IqyMdmyEDzDCk3Z+Wo/3y753oIgx8u9Q4eUbWkghFa8Jg=="],
 
     "magic-string": ["magic-string@0.30.21", "https://mirrors.cloud.tencent.com/npm/magic-string/-/magic-string-0.30.21.tgz", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
 
