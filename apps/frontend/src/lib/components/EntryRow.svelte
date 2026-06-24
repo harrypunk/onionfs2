@@ -5,11 +5,18 @@
 	interface Props {
 		entry: FsEntry;
 		entryHref?: (name: string) => string;
+		fileHref?: (name: string) => string;
 		selected?: boolean;
 		onToggle?: (selected: boolean) => void;
 	}
 
-	let { entry, entryHref, selected = false, onToggle }: Props = $props();
+	let {
+		entry,
+		entryHref,
+		fileHref,
+		selected = false,
+		onToggle,
+	}: Props = $props();
 
 	const Icon = $derived(entryIcon(entry.type));
 </script>
@@ -30,6 +37,8 @@
 			</span>
 			{#if entry.type === 1 && entryHref}
 				<a href={entryHref(entry.name)}>{entry.name}</a>
+			{:else if fileHref}
+				<a href={fileHref(entry.name)}>{entry.name}</a>
 			{:else}
 				<span>{entry.name}</span>
 			{/if}

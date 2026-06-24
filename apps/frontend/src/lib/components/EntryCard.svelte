@@ -5,14 +5,23 @@
 	interface Props {
 		entry: FsEntry;
 		entryHref?: (name: string) => string;
+		fileHref?: (name: string) => string;
 		selected?: boolean;
 		onToggle?: (selected: boolean) => void;
 	}
 
-	let { entry, entryHref, selected = false, onToggle }: Props = $props();
+	let {
+		entry,
+		entryHref,
+		fileHref,
+		selected = false,
+		onToggle,
+	}: Props = $props();
 
 	const Icon = $derived(entryIcon(entry.type));
-	const href = $derived(entry.type === 1 ? entryHref?.(entry.name) : undefined);
+	const href = $derived(
+		entry.type === 1 ? entryHref?.(entry.name) : fileHref?.(entry.name),
+	);
 </script>
 
 <div class="card entry-card" class:is-selected={selected}>

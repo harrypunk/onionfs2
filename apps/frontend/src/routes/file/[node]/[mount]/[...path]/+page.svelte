@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { page } from "$app/state";
-	import { resolve } from "$app/paths";
 	import { natsUrl } from "$lib/config";
 	import EntryTable from "$lib/components/EntryTable.svelte";
 	import PathBreadcrumb, {
 		type BreadcrumbItem,
 	} from "$lib/components/PathBreadcrumb.svelte";
 	import { listMount } from "$lib/datasource/mount-source";
-	import type { FsEntry } from "$lib/types";
 	import { NatsNodeDataSource } from "$lib/datasource/node-source";
 	import { NodeState } from "$lib/state/nodes.svelte";
+	import { buildBrowseUrl, buildPreviewUrl } from "$lib/url-helpers";
+	import type { FsEntry } from "$lib/types";
 
 	const dataSource = new NatsNodeDataSource(natsUrl);
 	const nodeState = new NodeState(dataSource);
@@ -46,7 +46,7 @@
 
 	function buildBreadcrumbItems(): BreadcrumbItem[] {
 		const items: BreadcrumbItem[] = [
-			{ label: "Nodes", href: resolve("/") },
+			{ label: "Nodes", href: "/" },
 			{ label: nodeId },
 		];
 
@@ -55,7 +55,7 @@
 		} else {
 			items.push({
 				label: mountName,
-				href: resolve("/[node]/[mount]", { node: nodeId, mount: mountName }),
+				href: buildBrowseUrl(nodeId, mountName),
 			});
 			for (let i = 0; i < pathSegments.length; i++) {
 				const active = i === pathSegments.length - 1;
@@ -64,11 +64,11 @@
 					active,
 				};
 				if (!active) {
-					crumb.href = resolve("/[node]/[mount]/[...path]", {
-						node: nodeId,
-						mount: mountName,
-						path: pathSegments.slice(0, i + 1).join("/"),
-					});
+					crumb.href = buildBrowseUrl(
+						nodeId,
+						mountName,
+						pathSegments.slice(0, i + 1).join("/"),
+					);
 				}
 				items.push(crumb);
 			}
@@ -79,11 +79,12 @@
 
 	function entryHref(entryName: string): string {
 		const nextDir = dir ? `${dir}/${entryName}` : entryName;
-		return resolve("/[node]/[mount]/[...path]", {
-			node: nodeId,
-			mount: mountName,
-			path: nextDir,
-		});
+		return buildBrowseUrl(nodeId, mountName, nextDir);
+	}
+
+	function fileHref(entryName: string): string {
+		const filePath = dir ? `${dir}/${entryName}` : entryName;
+		return buildPreviewUrl(nodeId, mountName, filePath);
 	}
 </script>
 
@@ -103,7 +104,7 @@
 		{:else if entries.length === 0}
 			<div class="notification is-light">This directory is empty.</div>
 		{:else}
-			<EntryTable {entries} {entryHref} />
+			<EntryTable {entries} {entryHref} {fileHref} />
 		{/if}
 	</div>
 </section>

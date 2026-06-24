@@ -9,10 +9,11 @@
 	interface Props {
 		entries: FsEntry[];
 		entryHref?: (name: string) => string;
+		fileHref?: (name: string) => string;
 		onAction?: (action: FileAction, entries: FsEntry[]) => void;
 	}
 
-	let { entries, entryHref, onAction }: Props = $props();
+	let { entries, entryHref, fileHref, onAction }: Props = $props();
 
 	let sortKey = $state<SortKey>(SortKey.Name);
 	let isAscending = $state<boolean>(true);
@@ -103,6 +104,7 @@
 		<FileList
 			entries={sortedEntries()}
 			{entryHref}
+			{fileHref}
 			{sortKey}
 			{isAscending}
 			onSort={toggleSort}
@@ -114,6 +116,7 @@
 		<FileGrid
 			entries={sortedEntries()}
 			{entryHref}
+			{fileHref}
 			{sortKey}
 			{isAscending}
 			onSort={toggleSort}

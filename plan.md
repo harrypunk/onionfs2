@@ -7,8 +7,9 @@ Last updated: 2026-06-24
 The project is a functional local prototype of a distributed filesystem agent.
 The backend can serve files, accept uploads, and announce itself over NATS.
 The frontend can display a live node overview, browse directories inside each node mount with sorting and icons, switch between list and grid views, and select entries via checkboxes for bulk actions.
+Phase 7 (list/grid view and selection toolbar) is finished; Phase 8 (file preview and download) is now in progress.
 
-Working tree is clean; last commit is `5bd378d` (stack toolbar and view toggle on mobile).
+Working tree is clean; last commit is `557217a` (add list/grid toggle, checkbox selection, and bulk-action toolbar).
 
 ## What's Done
 
@@ -99,7 +100,7 @@ These are the current limitations and areas for future work:
 
 ## Roadmap / Phases
 
-### Phase 7 — Directory listing view modes and file actions UX
+### Phase 7 — Directory listing view modes and file actions UX ✅
 
 Add a list/grid toggle for the mount browser and a selection-based file-actions UI.
 
@@ -123,7 +124,7 @@ Add a list/grid toggle for the mount browser and a selection-based file-actions 
   - `FileList` and `FileGrid` provide a select-all checkbox; selected rows/cards are highlighted.
   - The actual action handlers (open/download, rename, copy/move, delete) will be wired to backend endpoints in later phases; this phase defines only the selection shell and toolbar.
 
-### Phase 8 — Open files in the browser
+### Phase 8 — Open files in the browser 🚧
 
 Clicking an image or video opens a preview viewer in the browser; other file types trigger a download.
 

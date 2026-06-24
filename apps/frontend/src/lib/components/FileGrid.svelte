@@ -6,6 +6,7 @@
 	interface Props {
 		entries: FsEntry[];
 		entryHref?: (name: string) => string;
+		fileHref?: (name: string) => string;
 		sortKey: SortKey;
 		isAscending: boolean;
 		onSort: (key: SortKey) => void;
@@ -17,6 +18,7 @@
 	let {
 		entries,
 		entryHref,
+		fileHref,
 		sortKey,
 		isAscending,
 		onSort,
@@ -50,6 +52,7 @@
 				<EntryCard
 					{entry}
 					{entryHref}
+					{fileHref}
 					selected={selected.has(entry.name)}
 					onToggle={(checked) => onToggle(entry.name, checked)}
 				/>
