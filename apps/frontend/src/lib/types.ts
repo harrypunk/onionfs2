@@ -25,3 +25,11 @@ export enum ViewMode {
 	List = "list",
 	Grid = "grid",
 }
+
+export enum FileAction {
+	Download = "download",
+	Rename = "rename",
+	Copy = "copy",
+	Move = "move",
+	Delete = "delete",
+}

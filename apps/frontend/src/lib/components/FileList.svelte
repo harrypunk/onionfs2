@@ -9,14 +9,40 @@
 		sortKey: SortKey;
 		isAscending: boolean;
 		onSort: (key: SortKey) => void;
+		selected: Set<string>;
+		onToggle: (name: string, selected: boolean) => void;
+		onSelectAll: (selected: boolean) => void;
 	}
 
-	let { entries, entryHref, sortKey, isAscending, onSort }: Props = $props();
+	let {
+		entries,
+		entryHref,
+		sortKey,
+		isAscending,
+		onSort,
+		selected,
+		onToggle,
+		onSelectAll,
+	}: Props = $props();
+
+	const allSelected = $derived(
+		entries.length > 0 && entries.every((entry) => selected.has(entry.name)),
+	);
 </script>
 
 <table class="table is-fullwidth is-striped is-hoverable">
 	<thead>
 		<tr>
+			<th class="is-narrow">
+				<input
+					type="checkbox"
+					checked={allSelected}
+					indeterminate={!allSelected &&
+						entries.some((entry) => selected.has(entry.name))}
+					onchange={(event) => onSelectAll(event.currentTarget.checked)}
+					aria-label="Select all entries"
+				/>
+			</th>
 			<EntryTableHeader
 				label="Name"
 				active={sortKey === SortKey.Name}
@@ -40,7 +66,12 @@
 	</thead>
 	<tbody>
 		{#each entries as entry (entry.name)}
-			<EntryRow {entry} {entryHref} />
+			<EntryRow
+				{entry}
+				{entryHref}
+				selected={selected.has(entry.name)}
+				onToggle={(checked) => onToggle(entry.name, checked)}
+			/>
 		{/each}
 	</tbody>
 </table>

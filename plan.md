@@ -6,9 +6,9 @@ Last updated: 2026-06-24
 
 The project is a functional local prototype of a distributed filesystem agent.
 The backend can serve files, accept uploads, and announce itself over NATS.
-The frontend can display a live node overview and browse directories inside each node mount with sorting and icons.
+The frontend can display a live node overview, browse directories inside each node mount with sorting and icons, switch between list and grid views, and select entries via checkboxes for bulk actions.
 
-Working tree is clean; last commit is `7589c38` (mount browser with subdirectory browsing).
+Working tree is clean; last commit is `5bd378d` (stack toolbar and view toggle on mobile).
 
 ## What's Done
 
@@ -57,10 +57,13 @@ Working tree is clean; last commit is `7589c38` (mount browser with subdirectory
   - Page discovers the node via NATS and lists directories via the agent's `GET /fs/list` API
   - Breadcrumb navigation with path segments
   - Sortable columns (name, type, size) with `SortKey` enum and boolean direction
+  - List/grid view toggle (`ViewMode`) with `EntryRow` and `EntryCard` layouts
+  - Checkbox selection with select-all and a bulk-action toolbar (`SelectionToolbar`)
+  - Simplified type column: "D" for directories, empty for files
   - Lucide icons (home, folder, file, hard-drive) and human-readable size formatting
 - **Components**
   - `NodeOverview`, `NodeCard`, `MountTable`
-  - `PathBreadcrumb`, `EntryTable`, `EntryTableHeader`, `EntryRow`
+  - `PathBreadcrumb`, `EntryTable`, `EntryTableHeader`, `EntryRow`, `EntryCard`, `FileGrid`, `SelectionToolbar`, `ViewToggle`
 - **State**
   - `NodeState` class using `SvelteMap` and `$state`/`$derived`/`$effect`
 
@@ -90,24 +93,35 @@ These are the current limitations and areas for future work:
 - Moved `FsEntry` and added `SortKey` enum to `$lib/types.ts`.
 - Added `docs/filesystem-urls.md` documenting the URL structure.
 - Storeagent updates JetStream `max_age` on startup to match `2× announce_interval_sec`.
+- Added list/grid view toggle and `EntryCard`/`FileGrid` components for the mount browser.
+- Replaced the planned per-row dropdown menu with checkbox selection and a bulk-action toolbar (`SelectionToolbar`) for simpler mobile and desktop UX.
+- Simplified the type column to "D" for directories and empty for files.
 
 ## Roadmap / Phases
 
 ### Phase 7 — Directory listing view modes and file actions UX
 
-Add a list/grid toggle for the mount browser and a per-file actions menu.
+Add a list/grid toggle for the mount browser and a selection-based file-actions UI.
 
 - **List / grid toggle**
   - Reuse the existing data source and avoid duplicating large table markup.
   - Render rows/cards from the same `FsEntry` data, keeping `EntryRow`/`EntryTable` composable.
-- **File actions menu**
-  - Add a small menu icon (e.g. vertical ellipsis or `MoreVertical` from Lucide) to each `EntryRow`.
-  - Clicking the icon opens a dropdown/context menu with actions such as **Open / Preview**, **Download**, **Rename**, **Copy / Move**, and **Delete**.
-  - On touch devices, also support a **long-press** on the row to open the same menu.
-  - Keep the menu keyboard-accessible: focus trap, `Escape` to close, arrow-key navigation.
-  - The menu should not interfere with normal row clicks (e.g. navigating into a folder).
-
-The actual action handlers (open, download, rename, copy/move, delete) will be added in later phases; this phase only defines the menu shell, show/hide behavior, and long-press activation.
+- **File actions UX**
+  - Use a checkbox on each `EntryRow` and `EntryCard` instead of a per-row dropdown menu.
+  - When one or more entries are selected, show a bulk-action toolbar above the table/grid.
+  - **Why checkboxes instead of a dropdown menu or long-press?**
+    - Dropdown menus are hard to get right across screen sizes: they need absolute positioning, collision detection, focus trapping, and a backdrop to close on outside clicks. On mobile they often end up too small or off-screen.
+    - A long-press menu was prototyped but turned out to be harder to implement reliably than expected:
+      - **Gesture ambiguity**: the same pointer sequence is used for tap (open/navigate), scroll, drag-to-select, and long-press. Distinguishing them requires timers, movement thresholds, and careful handling of `pointerdown`/`pointerup`/`pointermove`/`touchstart`/`touchend` across devices.
+      - **Native context-menu conflict**: browsers fire a native `contextmenu` event on long-press, especially on touch and macOS trackpads. Suppressing it needs `preventDefault` at the right time, but doing so can also block useful native behavior like text selection or link previews.
+      - **Release-vs-menu interaction**: when the menu appears while the user is still holding the pointer down, lifting the pointer must not immediately trigger a click on the row or the first menu item. Preventing that click without breaking normal menu-item clicks requires tracking whether the release was part of the long-press and selectively stopping propagation.
+      - **Scroll/long-press race**: if the user starts a long-press and then slightly moves the finger, did they intend to scroll or to keep holding? Picking a single timeout works for one case but feels wrong for the other.
+      - **Reusable-action tension**: a clean Svelte action would only report "this element is long-pressed", but the menu still needs to know anchor position, viewport edges, and focus. A richer action ends up coupling the gesture detector to menu-specific DOM knowledge, which is the opposite of a reusable primitive.
+      - **Accessibility**: long-press has no keyboard equivalent, so a separate keyboard-accessible menu path would still be needed.
+    - Checkboxes are simple, native, accessible, and work identically in list and grid views. They also scale naturally from single-file actions to multi-select bulk actions, so the same toolbar can handle both cases without separate menu implementations.
+  - Bulk actions shown in the toolbar: **Download**, **Rename** (disabled unless exactly one item is selected), **Copy**, **Move**, **Delete**, and **Clear selection**.
+  - `FileList` and `FileGrid` provide a select-all checkbox; selected rows/cards are highlighted.
+  - The actual action handlers (open/download, rename, copy/move, delete) will be wired to backend endpoints in later phases; this phase defines only the selection shell and toolbar.
 
 ### Phase 8 — Open files in the browser
 
@@ -242,23 +256,18 @@ Add basic filesystem mutation operations for individual files and directories.
 
 This phase is intentionally simple and should reuse the existing path validation and directory-change notification plumbing from earlier phases.
 
-### Phase 14 — Multi-select support
+### Phase 14 — Bulk action backend integration
 
-Allow users to select multiple entries in the mount browser and perform bulk actions.
+The multi-select UI (checkboxes, select-all, bulk-action toolbar) is implemented in Phase 7. This phase wires those toolbar actions to batch backend endpoints and adds advanced selection interactions.
 
-#### UX design
+#### Remaining UX work
 
-- **Selection state**
-  - Add a checkbox at the start of each `EntryRow` (hidden until selection mode is active, or always visible on hover/focus for discoverability).
-  - Provide a master checkbox in the `EntryTable` header to select/deselect all visible entries.
-  - Show a floating selection bar (or replace the table header) with the selected count and bulk actions.
-- **Entering selection mode**
-  - Clicking a row checkbox toggles selection without triggering navigation.
-  - On desktop, `Ctrl`/`Cmd` + click and `Shift` + click should also toggle/select ranges.
-  - On touch, a long-press on a row enters selection mode and selects that row, matching the Phase 7 long-press menu behavior.
-- **Visual feedback**
-  - Highlight selected rows distinctly.
-  - Disable or hide single-row action menus while multiple items are selected, or convert them into the bulk selection bar.
+- **Range selection**
+  - On desktop, support `Shift` + click to select a range of entries.
+  - On desktop, `Ctrl`/`Cmd` + click toggles individual entries.
+- **Confirmation dialogs**
+  - Show a single confirmation dialog for bulk delete listing the number of items.
+  - For copy/move, show a destination picker and construct target paths by preserving entry names under the chosen directory.
 
 #### Bulk actions
 
@@ -286,7 +295,6 @@ The existing single-target actions should accept a list of paths:
 
 #### Integration with existing components
 
-- `EntryRow` gains a selection checkbox and emits `toggleSelect` events.
-- `EntryTable` tracks the selected set and renders the bulk action bar.
-- `EntryTableHeader` renders the master checkbox and sort headers.
-- Reuse the per-file action logic from Phase 7 by wrapping it for bulk selection; avoid duplicating confirmation dialogs and destination pickers.
+- `EntryRow` and `EntryCard` already expose `selected`/`onToggle` props.
+- `EntryTable` already tracks the selected set and renders the bulk action bar via `SelectionToolbar`.
+- Reuse the per-file action logic from Phase 8–13 by wrapping it for bulk selection; avoid duplicating confirmation dialogs and destination pickers.

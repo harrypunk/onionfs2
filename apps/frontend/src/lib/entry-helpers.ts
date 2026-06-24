@@ -3,15 +3,8 @@ import FileQuestion from "lucide-svelte/icons/file-question";
 import Folder from "lucide-svelte/icons/folder";
 import type { Component } from "svelte";
 
-export function typeName(type: number): string {
-	switch (type) {
-		case 1:
-			return "Directory";
-		case 2:
-			return "File";
-		default:
-			return "Unknown";
-	}
+export function typeLabel(type: number): string {
+	return type === 1 ? "D" : "";
 }
 
 export function formatSize(bytes: number | undefined): string {

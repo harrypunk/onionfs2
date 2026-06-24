@@ -9,17 +9,50 @@
 		sortKey: SortKey;
 		isAscending: boolean;
 		onSort: (key: SortKey) => void;
+		selected: Set<string>;
+		onToggle: (name: string, selected: boolean) => void;
+		onSelectAll: (selected: boolean) => void;
 	}
 
-	let { entries, entryHref, sortKey, isAscending, onSort }: Props = $props();
+	let {
+		entries,
+		entryHref,
+		sortKey,
+		isAscending,
+		onSort,
+		selected,
+		onToggle,
+		onSelectAll,
+	}: Props = $props();
+
+	const allSelected = $derived(
+		entries.length > 0 && entries.every((entry) => selected.has(entry.name)),
+	);
 </script>
 
 <div class="file-grid-view">
-	<SortBar {sortKey} {isAscending} {onSort} />
+	<div class="is-flex is-align-items-center mb-4">
+		<label class="checkbox mr-4">
+			<input
+				type="checkbox"
+				checked={allSelected}
+				indeterminate={!allSelected &&
+					entries.some((entry) => selected.has(entry.name))}
+				onchange={(event) => onSelectAll(event.currentTarget.checked)}
+			/>
+			Select all
+		</label>
+		<SortBar {sortKey} {isAscending} {onSort} />
+	</div>
 	<div class="file-grid" role="list">
 		{#each entries as entry (entry.name)}
 			<div role="listitem">
-				<EntryCard {entry} {entryHref} />
+				<EntryCard
+					{entry}
+					{entryHref}
+					selected={selected.has(entry.name)}
+					onToggle={(checked) => onToggle(entry.name, checked)}
+				/>
 			</div>
 		{/each}
 	</div>
