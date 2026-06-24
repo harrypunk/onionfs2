@@ -20,3 +20,8 @@ export enum SortKey {
 	Type = "type",
 	Size = "size",
 }
+
+export enum ViewMode {
+	List = "list",
+	Grid = "grid",
+}

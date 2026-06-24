@@ -1,7 +1,5 @@
 <script lang="ts">
-	import File from "lucide-svelte/icons/file";
-	import FileQuestion from "lucide-svelte/icons/file-question";
-	import Folder from "lucide-svelte/icons/folder";
+	import { entryIcon, formatSize, typeName } from "$lib/entry-helpers";
 	import type { FsEntry } from "$lib/types";
 
 	interface Props {
@@ -12,37 +10,6 @@
 	let { entry, entryHref }: Props = $props();
 
 	const Icon = $derived(entryIcon(entry.type));
-
-	function typeName(type: number): string {
-		switch (type) {
-			case 1:
-				return "Directory";
-			case 2:
-				return "File";
-			default:
-				return "Unknown";
-		}
-	}
-
-	function entryIcon(type: number) {
-		switch (type) {
-			case 1:
-				return Folder;
-			case 2:
-				return File;
-			default:
-				return FileQuestion;
-		}
-	}
-
-	function formatSize(bytes: number | undefined): string {
-		if (bytes === undefined) return "-";
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-		if (bytes < 1024 * 1024 * 1024)
-			return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-		return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-	}
 </script>
 
 <tr>

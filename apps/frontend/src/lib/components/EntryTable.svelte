@@ -1,7 +1,8 @@
 <script lang="ts">
-	import EntryRow from "$lib/components/EntryRow.svelte";
-	import EntryTableHeader from "$lib/components/EntryTableHeader.svelte";
-	import { SortKey, type FsEntry } from "$lib/types";
+	import FileGrid from "$lib/components/FileGrid.svelte";
+	import FileList from "$lib/components/FileList.svelte";
+	import ViewToggle from "$lib/components/ViewToggle.svelte";
+	import { SortKey, ViewMode, type FsEntry } from "$lib/types";
 
 	interface Props {
 		entries: FsEntry[];
@@ -12,6 +13,7 @@
 
 	let sortKey = $state<SortKey>(SortKey.Name);
 	let isAscending = $state<boolean>(true);
+	let viewMode = $state<ViewMode>(ViewMode.List);
 
 	const sortedEntries = $derived(() => {
 		const sorted = [...entries];
@@ -41,35 +43,32 @@
 			isAscending = true;
 		}
 	}
+
+	function setViewMode(mode: ViewMode) {
+		viewMode = mode;
+	}
 </script>
 
-<table class="table is-fullwidth is-striped is-hoverable">
-	<thead>
-		<tr>
-			<EntryTableHeader
-				label="Name"
-				active={sortKey === SortKey.Name}
-				isAscending={sortKey === SortKey.Name ? isAscending : undefined}
-				onSort={() => toggleSort(SortKey.Name)}
-			/>
-			<EntryTableHeader
-				label="Type"
-				active={sortKey === SortKey.Type}
-				isAscending={sortKey === SortKey.Type ? isAscending : undefined}
-				onSort={() => toggleSort(SortKey.Type)}
-			/>
-			<EntryTableHeader
-				label="Size"
-				align="right"
-				active={sortKey === SortKey.Size}
-				isAscending={sortKey === SortKey.Size ? isAscending : undefined}
-				onSort={() => toggleSort(SortKey.Size)}
-			/>
-		</tr>
-	</thead>
-	<tbody>
-		{#each sortedEntries() as entry (entry.name)}
-			<EntryRow {entry} {entryHref} />
-		{/each}
-	</tbody>
-</table>
+<div class="entry-table">
+	<div class="is-flex is-justify-content-flex-end is-align-items-center mb-4">
+		<ViewToggle value={viewMode} onChange={setViewMode} />
+	</div>
+
+	{#if viewMode === ViewMode.List}
+		<FileList
+			entries={sortedEntries()}
+			{entryHref}
+			{sortKey}
+			{isAscending}
+			onSort={toggleSort}
+		/>
+	{:else}
+		<FileGrid
+			entries={sortedEntries()}
+			{entryHref}
+			{sortKey}
+			{isAscending}
+			onSort={toggleSort}
+		/>
+	{/if}
+</div>
