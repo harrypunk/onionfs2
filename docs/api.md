@@ -1,0 +1,230 @@
+# Filesystem API
+
+## `GET /mount/list`
+
+Returns the list of configured mount names.
+
+### Success Response (200)
+
+```json
+{
+  "mounts": ["data1", "nvme1"]
+}
+```
+
+## `GET /fs/list?mount=<name>&dir=<path>`
+
+List the contents of a directory within a mount.
+
+### Query Parameters
+
+| Parameter | Required | Format                                        | Description                                                                           |
+| --------- | -------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `mount`   | Yes      | Alphanumeric (`a-zA-Z0-9`)                    | Logical mount name from config                                                        |
+| `dir`     | No       | Relative path segments starting with a letter | Relative directory path inside the mount. Omit or leave empty to list the mount root. |
+
+### Examples
+
+```sh
+# List mount root
+curl "http://localhost:3000/fs/list?mount=data1&dir="
+
+# List a subdirectory
+curl "http://localhost:3000/fs/list?mount=nvme1&dir=photos/2024"
+```
+
+### Success Response (200)
+
+```json
+{
+  "path": "/mnt/nvme1/photos/2024",
+  "entries": [
+    { "name": "vacation.jpg", "type": 2, "size": 2048000 },
+    { "name": "thumbnails", "type": 1 },
+    { "name": "broken-link", "type": 0 }
+  ]
+}
+```
+
+### Entry Types
+
+| Value | Name        | Description                                    |
+| ----- | ----------- | ---------------------------------------------- |
+| `0`   | `Unknown`   | Could not determine type (e.g. broken symlink) |
+| `1`   | `Directory` | Sub-directory                                  |
+| `2`   | `File`      | Regular file; `size` is present in bytes       |
+
+### Error Responses
+
+| Status | Condition                                                          |
+| ------ | ------------------------------------------------------------------ |
+| `400`  | Invalid `mount` name or malformed `dir` path                       |
+| `404`  | Mount not found in config, or directory does not exist             |
+| `403`  | Path traversal detected (resolved path escapes the mount boundary) |
+| `500`  | Unexpected filesystem error                                        |
+
+## `GET /fs/get?mount=<name>&dir=<path>`
+
+Stream a file from a mount. Supports optional `Range` header for partial content.
+
+### Query Parameters
+
+| Parameter | Required | Format                     | Description                    |
+| --------- | -------- | -------------------------- | ------------------------------ |
+| `mount`   | Yes      | Alphanumeric (`a-zA-Z0-9`) | Logical mount name from config |
+| `dir`     | Yes      | Relative path to file      | File path inside the mount     |
+
+### Headers
+
+| Header  | Required | Example        | Description                      |
+| ------- | -------- | -------------- | -------------------------------- |
+| `Range` | No       | `bytes=0-1023` | Request a byte range of the file |
+
+### Examples
+
+```sh
+# Full file
+curl -O "http://localhost:3000/fs/get?mount=nvme1&dir=photos/2024/vacation.jpg"
+
+# Partial content (first 1KB)
+curl -H "Range: bytes=0-1023" \
+  -o partial.bin \
+  "http://localhost:3000/fs/get?mount=nvme1&dir=photos/2024/vacation.jpg"
+```
+
+### Success Responses
+
+| Status | Condition             | Headers                                                                   |
+| ------ | --------------------- | ------------------------------------------------------------------------- |
+| `200`  | Full file             | `Content-Type`, `Content-Length`, `Accept-Ranges: bytes`                  |
+| `206`  | Partial content       | `Content-Type`, `Content-Length`, `Content-Range`, `Accept-Ranges: bytes` |
+| `416`  | Range not satisfiable | `Content-Range: bytes */<size>`                                           |
+
+### Error Responses
+
+| Status | Condition                                                           |
+| ------ | ------------------------------------------------------------------- |
+| `400`  | Invalid `mount` name, malformed `dir` path, or target is not a file |
+| `404`  | Mount not found, or file does not exist                             |
+| `403`  | Path traversal detected                                             |
+| `500`  | Unexpected filesystem error                                         |
+
+## `POST /fs/upload?mount=<name>&dir=<path>`
+
+Single-shot file upload. The request body is streamed directly to disk.
+
+### Query Parameters
+
+| Parameter | Required | Format                     | Description                       |
+| --------- | -------- | -------------------------- | --------------------------------- |
+| `mount`   | Yes      | Alphanumeric (`a-zA-Z0-9`) | Logical mount name from config    |
+| `dir`     | Yes      | Relative path to file      | Target file path inside the mount |
+
+### Example
+
+```sh
+curl -X POST \
+  --data-binary @vacation.jpg \
+  "http://localhost:3000/fs/upload?mount=nvme1&dir=photos/2024/vacation.jpg"
+```
+
+### Success Response (200)
+
+```json
+{
+  "path": "/mnt/nvme1/photos/2024/vacation.jpg",
+  "size": 2048000
+}
+```
+
+### Error Responses
+
+| Status | Condition                                        |
+| ------ | ------------------------------------------------ |
+| `400`  | Missing body, invalid `mount`, or malformed path |
+| `404`  | Mount not found                                  |
+| `403`  | Path traversal detected                          |
+| `500`  | Unexpected filesystem error                      |
+
+## `POST /fs/multipart/init?mount=<name>&file=<path>`
+
+Start a multipart upload session for a large file. Returns an `uploadId` used by subsequent `/multipart/upload` and `/multipart/complete` calls.
+
+The storeagent creates a temporary part folder next to the target file:
+`${targetPath}-upload-${uploadId}`.
+
+### Query Parameters
+
+| Parameter | Required | Format                     | Description                       |
+| --------- | -------- | -------------------------- | --------------------------------- |
+| `mount`   | Yes      | Alphanumeric (`a-zA-Z0-9`) | Logical mount name from config    |
+| `file`    | Yes      | Relative path to file      | Target file path inside the mount |
+
+### Example
+
+```sh
+curl -X POST \
+  "http://localhost:3000/fs/multipart/init?mount=nvme1&file=videos/4k/drone.mp4"
+```
+
+### Success Response (200)
+
+```json
+{
+  "uploadId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+## `POST /fs/multipart/upload?uploadId=<id>&partNumber=<n>`
+
+Upload a single part (chunk) of a multipart session. Parts are numbered starting from `1`.
+
+### Query Parameters
+
+| Parameter    | Required | Format      | Description                       |
+| ------------ | -------- | ----------- | --------------------------------- |
+| `uploadId`   | Yes      | UUID        | Session ID from `/multipart/init` |
+| `partNumber` | Yes      | Integer ≥ 1 | Part index                        |
+
+### Example
+
+```sh
+curl -X POST \
+  --data-binary @part1.bin \
+  "http://localhost:3000/fs/multipart/upload?uploadId=a1b2c3d4&partNumber=1"
+```
+
+### Success Response (200)
+
+```json
+{
+  "uploadId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "partNumber": 1
+}
+```
+
+## `POST /fs/multipart/complete?uploadId=<id>`
+
+Finalise a multipart upload. The storeagent concatenates all parts in numeric order, writes the result to the target file, and removes the temporary part folder.
+
+### Query Parameters
+
+| Parameter  | Required | Format | Description                       |
+| ---------- | -------- | ------ | --------------------------------- |
+| `uploadId` | Yes      | UUID   | Session ID from `/multipart/init` |
+
+### Example
+
+```sh
+curl -X POST \
+  "http://localhost:3000/fs/multipart/complete?uploadId=a1b2c3d4"
+```
+
+### Success Response (200)
+
+```json
+{
+  "path": "/mnt/nvme1/videos/4k/drone.mp4",
+  "size": 2147483648
+}
+```
