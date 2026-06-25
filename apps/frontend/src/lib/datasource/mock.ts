@@ -1,4 +1,3 @@
-import { concat, NEVER, of } from "rxjs";
 import type { NodeInfo } from "$lib/types";
 import type { NodeDataSource } from "./types";
 
@@ -18,7 +17,9 @@ const MOCK_NODES: NodeInfo[] = [
 ];
 
 export const mockDataSource: NodeDataSource = {
-	fetch() {
-		return concat(of(MOCK_NODES[0]), of(MOCK_NODES[1]), NEVER);
+	async *fetch() {
+		for (const node of MOCK_NODES) {
+			yield node;
+		}
 	},
 };

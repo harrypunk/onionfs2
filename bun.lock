@@ -12,7 +12,6 @@
         "@onionfs2/shared": "workspace:*",
         "lucide-svelte": "^1.0.1",
         "nats.ws": "^1.29.3",
-        "rxjs": "^7.8.2",
       },
       "devDependencies": {
         "@eslint/js": "^9.25.0",

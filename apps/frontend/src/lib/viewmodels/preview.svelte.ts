@@ -1,10 +1,10 @@
 import { fileCategory } from "$lib/file-category";
-import { nodeState } from "$lib/state/nodes.svelte";
+import { nodeInfoManager } from "$lib/managers/node-info.svelte";
 
 export type PreviewCategory = ReturnType<typeof fileCategory>;
 
 /** View-model for the preview page. Encapsulates node lookup and URL building
- * so the Svelte component does not depend directly on nodeState or derived state. */
+ * so the Svelte component does not depend directly on nodeInfoManager or derived state. */
 export class PreviewViewModel {
 	readonly nodeId: string;
 	readonly mountName: string;
@@ -22,15 +22,15 @@ export class PreviewViewModel {
 		this.filePath = filePath;
 
 		$effect(() => {
-			const nodeError = nodeState.error;
-			if (nodeError) {
-				this.error = nodeError;
+			const managerError = nodeInfoManager.error;
+			if (managerError) {
+				this.error = managerError;
 				this.isLoading = false;
 			}
 		});
 
 		$effect(() => {
-			const node = nodeState.nodes.get(this.nodeId);
+			const node = nodeInfoManager.nodes.get(this.nodeId);
 			const publicUrl = node?.publicUrl;
 			if (publicUrl && publicUrl !== this.#lastPublicUrl) {
 				this.#lastPublicUrl = publicUrl;
@@ -47,14 +47,13 @@ export class PreviewViewModel {
 		return fileCategory(this.fileName);
 	}
 
-	/** Starts node discovery and builds the direct agent URL once the node is known.
+	/** Builds the direct agent URL once the node is known.
 	 * Call from the component's onMount lifecycle hook. */
 	load(): void {
 		this.isLoading = true;
 		this.error = null;
-		nodeState.load();
 
-		const node = nodeState.nodes.get(this.nodeId);
+		const node = nodeInfoManager.nodes.get(this.nodeId);
 		if (node?.publicUrl) {
 			this.#setUrl(node.publicUrl);
 		}

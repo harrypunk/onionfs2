@@ -1,30 +1,24 @@
-import { fromFetch } from "rxjs/fetch";
-import { map } from "rxjs/operators";
-import type { Observable } from "rxjs";
 import type { FsEntry } from "$lib/types";
 
 /**
  * Lists a directory inside a node's mount.
  *
- * Returns an Observable so it can later be swapped for a live pub/sub source
- * (e.g. WebSocket or SSE) without changing the consumer.
+ * Returns a Promise so the consumer can store the result in Svelte state.
  */
-export function listMount(
+export async function listMount(
 	publicUrl: string,
 	mountName: string,
 	dir = "",
-): Observable<FsEntry[]> {
-	return fromFetch(
+): Promise<FsEntry[]> {
+	const response = await fetch(
 		`http://${publicUrl}/fs/list?mount=${encodeURIComponent(mountName)}&dir=${encodeURIComponent(dir)}`,
-		{
-			selector: async (response) => {
-				if (!response.ok) {
-					return response.text().then((text) => {
-						throw new Error(`HTTP ${response.status}: ${text}`);
-					});
-				}
-				return response.json();
-			},
-		},
-	).pipe(map((data) => data.entries ?? []));
+	);
+
+	if (!response.ok) {
+		const text = await response.text();
+		throw new Error(`HTTP ${response.status}: ${text}`);
+	}
+
+	const data = (await response.json()) as { entries?: FsEntry[] };
+	return data.entries ?? [];
 }

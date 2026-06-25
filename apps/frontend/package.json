@@ -36,7 +36,6 @@
 	"dependencies": {
 		"@onionfs2/shared": "workspace:*",
 		"lucide-svelte": "^1.0.1",
-		"nats.ws": "^1.29.3",
-		"rxjs": "^7.8.2"
+		"nats.ws": "^1.29.3"
 	}
 }

@@ -4,35 +4,16 @@
 	import PathBreadcrumb, {
 		type BreadcrumbItem,
 	} from "$lib/components/PathBreadcrumb.svelte";
-	import { listMount } from "$lib/datasource/mount-source";
-	import { nodeState } from "$lib/state/nodes.svelte";
+	import { FileBrowserViewModel } from "$lib/viewmodels/file-browser.svelte";
 	import { buildBrowseUrl, buildPreviewUrl } from "$lib/url-helpers";
-	import type { FsEntry } from "$lib/types";
+	import { onMount } from "svelte";
 
-	const nodeId = $derived(decodeURIComponent(page.params.node ?? ""));
-	const mountName = $derived(decodeURIComponent(page.params.mount ?? ""));
-	const dir = $derived(page.params.path ?? "");
-	const pathSegments = $derived(dir ? dir.split("/") : []);
+	const nodeId = decodeURIComponent(page.params.node ?? "");
+	const mountName = decodeURIComponent(page.params.mount ?? "");
+	const dir = page.params.path ?? "";
+	const pathSegments = dir ? dir.split("/") : [];
 
-	let entries = $state<FsEntry[]>([]);
-	let fetchError = $state<string | null>(null);
-
-	$effect(() => {
-		const node = nodeState.nodes.get(nodeId);
-		if (!node) return;
-
-		const subscription = listMount(node.publicUrl, mountName, dir).subscribe({
-			next: (data) => {
-				entries = data;
-				fetchError = null;
-			},
-			error: (err) => {
-				fetchError = err instanceof Error ? err.message : String(err);
-			},
-		});
-
-		return () => subscription.unsubscribe();
-	});
+	const viewModel = new FileBrowserViewModel(nodeId, mountName, dir);
 
 	function buildBreadcrumbItems(): BreadcrumbItem[] {
 		const items: BreadcrumbItem[] = [
@@ -76,6 +57,10 @@
 		const filePath = dir ? `${dir}/${entryName}` : entryName;
 		return buildPreviewUrl(nodeId, mountName, filePath);
 	}
+
+	onMount(() => {
+		viewModel.load();
+	});
 </script>
 
 <section class="section">
@@ -85,16 +70,14 @@
 		<h1 class="title is-3">{mountName}</h1>
 		<p class="subtitle is-5 has-text-grey">{nodeId}</p>
 
-		{#if nodeState.error}
-			<div class="notification is-danger">
-				Failed to load nodes: {nodeState.error.message}
-			</div>
-		{:else if fetchError}
-			<div class="notification is-danger">{fetchError}</div>
-		{:else if entries.length === 0}
+		{#if viewModel.error}
+			<div class="notification is-danger">{viewModel.error}</div>
+		{:else if viewModel.isLoading}
+			<div class="notification is-light">Loading directory…</div>
+		{:else if viewModel.entries.length === 0}
 			<div class="notification is-light">This directory is empty.</div>
 		{:else}
-			<EntryTable {entries} {entryHref} {fileHref} />
+			<EntryTable entries={viewModel.entries} {entryHref} {fileHref} />
 		{/if}
 	</div>
 </section>
