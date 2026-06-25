@@ -1,32 +1,16 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { natsUrl } from "$lib/config";
-	import { fileCategory } from "$lib/file-category";
-	import { NatsNodeDataSource } from "$lib/datasource/node-source";
-	import { NodeState } from "$lib/state/nodes.svelte";
 	import { onMount } from "svelte";
+	import { PreviewViewModel } from "$lib/viewmodels/preview.svelte";
 
-	const dataSource = new NatsNodeDataSource(natsUrl);
-	const nodeState = new NodeState(dataSource);
+	const nodeId = decodeURIComponent(page.params.node ?? "");
+	const mountName = decodeURIComponent(page.params.mount ?? "");
+	const filePath = page.params.path ?? "";
 
-	const nodeId = $derived(decodeURIComponent(page.params.node ?? ""));
-	const mountName = $derived(decodeURIComponent(page.params.mount ?? ""));
-	const filePath = $derived(page.params.path ?? "");
-	const fileName = $derived(filePath.split("/").pop() ?? "");
-	const category = $derived(fileCategory(fileName));
-
-	const directUrl = $derived(() => {
-		const node = nodeState.nodes.get(nodeId);
-		if (!node) return null;
-		const query = new URLSearchParams({
-			mount: mountName,
-			dir: filePath,
-		});
-		return `http://${node.publicUrl}/fs/get?${query.toString()}`;
-	});
+	const viewModel = new PreviewViewModel(nodeId, mountName, filePath);
 
 	onMount(() => {
-		nodeState.load();
+		viewModel.load();
 	});
 </script>
 
@@ -36,40 +20,40 @@
 			<ul>
 				<li><a href="/">Nodes</a></li>
 				<li class="is-active">
-					<span aria-current="page">{fileName}</span>
+					<span aria-current="page">{viewModel.fileName}</span>
 				</li>
 			</ul>
 		</nav>
 
-		<h1 class="title is-3">{fileName}</h1>
+		<h1 class="title is-3">{viewModel.fileName}</h1>
 		<p class="subtitle is-5 has-text-grey">{nodeId} / {mountName}</p>
 
-		{#if nodeState.error}
+		{#if viewModel.error}
 			<div class="notification is-danger">
-				Failed to load nodes: {nodeState.error.message}
+				Failed to load file location: {viewModel.error.message}
 			</div>
 		{/if}
 
-		{#if directUrl()}
-			{#if category === "image"}
+		{#if viewModel.isLoading}
+			<div class="notification is-light">Loading file location…</div>
+		{:else if viewModel.directUrl}
+			{#if viewModel.category === "image"}
 				<figure class="image preview-container">
-					<img src={directUrl()} alt={fileName} />
+					<img src={viewModel.directUrl} alt={viewModel.fileName} />
 				</figure>
-			{:else if category === "video"}
+			{:else if viewModel.category === "video"}
 				<video class="preview-container" controls preload="metadata">
-					<source src={directUrl()} />
+					<source src={viewModel.directUrl} />
 					<p>Your browser does not support HTML5 video.</p>
 				</video>
 			{:else}
 				<div class="box has-text-centered">
 					<p class="mb-4">No preview available for this file type.</p>
-					<a class="button is-primary" href={directUrl()} download>
+					<a class="button is-primary" href={viewModel.directUrl} download>
 						Download file
 					</a>
 				</div>
 			{/if}
-		{:else}
-			<div class="notification is-light">Loading file location…</div>
 		{/if}
 	</div>
 </section>

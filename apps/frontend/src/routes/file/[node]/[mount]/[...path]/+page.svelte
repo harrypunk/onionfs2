@@ -1,19 +1,13 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import { page } from "$app/state";
-	import { natsUrl } from "$lib/config";
 	import EntryTable from "$lib/components/EntryTable.svelte";
 	import PathBreadcrumb, {
 		type BreadcrumbItem,
 	} from "$lib/components/PathBreadcrumb.svelte";
 	import { listMount } from "$lib/datasource/mount-source";
-	import { NatsNodeDataSource } from "$lib/datasource/node-source";
-	import { NodeState } from "$lib/state/nodes.svelte";
+	import { nodeState } from "$lib/state/nodes.svelte";
 	import { buildBrowseUrl, buildPreviewUrl } from "$lib/url-helpers";
 	import type { FsEntry } from "$lib/types";
-
-	const dataSource = new NatsNodeDataSource(natsUrl);
-	const nodeState = new NodeState(dataSource);
 
 	const nodeId = $derived(decodeURIComponent(page.params.node ?? ""));
 	const mountName = $derived(decodeURIComponent(page.params.mount ?? ""));
@@ -22,10 +16,6 @@
 
 	let entries = $state<FsEntry[]>([]);
 	let fetchError = $state<string | null>(null);
-
-	onMount(() => {
-		nodeState.load();
-	});
 
 	$effect(() => {
 		const node = nodeState.nodes.get(nodeId);
