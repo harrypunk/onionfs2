@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { onMount } from "svelte";
 	import { PreviewViewModel } from "$lib/viewmodels/preview.svelte";
 
 	const nodeId = decodeURIComponent(page.params.node ?? "");
 	const mountName = decodeURIComponent(page.params.mount ?? "");
-	const filePath = page.params.path ?? "";
+	const filePath = $derived(page.params.path ?? "");
 
-	const viewModel = new PreviewViewModel(nodeId, mountName, filePath);
+	// Recreate the view-model whenever the file path changes.
+	// SvelteKit reuses this component on client-side navigation, so `onMount`
+	// alone is not enough.
+	const viewModel = $derived.by(
+		() => new PreviewViewModel(nodeId, mountName, filePath),
+	);
 
-	onMount(() => {
+	$effect(() => {
 		viewModel.load();
 	});
 </script>

@@ -6,14 +6,25 @@
 	} from "$lib/components/PathBreadcrumb.svelte";
 	import { FileBrowserViewModel } from "$lib/viewmodels/file-browser.svelte";
 	import { buildBrowseUrl, buildPreviewUrl } from "$lib/url-helpers";
-	import { onMount } from "svelte";
 
 	const nodeId = decodeURIComponent(page.params.node ?? "");
 	const mountName = decodeURIComponent(page.params.mount ?? "");
-	const dir = page.params.path ?? "";
-	const pathSegments = dir ? dir.split("/") : [];
 
-	const viewModel = new FileBrowserViewModel(nodeId, mountName, dir);
+	// `trailingSlash = "always"` keeps a trailing slash in the URL.
+	// Strip it so path math and API calls are consistent.
+	const dir = $derived((page.params.path ?? "").replace(/\/+$/, ""));
+	const pathSegments = $derived(dir ? dir.split("/") : []);
+
+	// Recreate the view-model whenever the directory path changes.
+	// SvelteKit reuses this component on client-side navigation, so `onMount`
+	// alone is not enough.
+	const viewModel = $derived.by(
+		() => new FileBrowserViewModel(nodeId, mountName, dir),
+	);
+
+	$effect(() => {
+		viewModel.load();
+	});
 
 	function buildBreadcrumbItems(): BreadcrumbItem[] {
 		const items: BreadcrumbItem[] = [
@@ -57,10 +68,6 @@
 		const filePath = dir ? `${dir}/${entryName}` : entryName;
 		return buildPreviewUrl(nodeId, mountName, filePath);
 	}
-
-	onMount(() => {
-		viewModel.load();
-	});
 </script>
 
 <section class="section">

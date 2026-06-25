@@ -31,12 +31,13 @@ export class FileBrowserViewModel {
 		const agentInfo = this.#nodeinfoManager.getNodeById(this.nodeId);
 		if (!agentInfo) {
 			this.error = `Cant find agent ${this.nodeId}`;
+			this.isLoading = false;
 			return;
 		}
 
 		try {
 			this.entries = await listMount(
-				agentInfo?.publicUrl,
+				agentInfo.publicUrl,
 				this.mountName,
 				this.dir,
 			);
