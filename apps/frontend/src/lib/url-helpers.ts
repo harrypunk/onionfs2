@@ -1,5 +1,6 @@
 import { resolve } from "$app/paths";
 import { encodePathId, decodePathId } from "@onionfs2/shared";
+import type { Result } from "@onionfs2/shared";
 
 export function buildBrowseUrl(
 	nodeId: string,
@@ -27,11 +28,11 @@ export function buildPreviewUrl(
 	});
 }
 
-export function fileNameFromPathId(id: string): string | undefined {
-	const path = decodePathId(id);
-	if (path === undefined) {
-		return undefined;
+export function fileNameFromPathId(id: string): Result<string> {
+	const result = decodePathId(id);
+	if (!result.ok) {
+		return result;
 	}
-	const segments = path.split("/");
-	return segments[segments.length - 1];
+	const segments = result.value.split("/");
+	return { ok: true, value: segments[segments.length - 1] };
 }

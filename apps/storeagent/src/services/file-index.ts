@@ -1,6 +1,12 @@
 import { join, resolve } from "node:path";
+import type { Result } from "@onionfs2/shared";
 import { decodePathId, encodePathId } from "@onionfs2/shared";
 import type { ResolvedPath } from "@/lib/path-resolver";
+
+/**
+ * Result of looking up a mount + id pair.
+ */
+export type FileIndexLookupResult = Result<ResolvedPath>;
 
 /**
  * Lightweight resolver for `/file/:mount/:id` URLs.
@@ -23,30 +29,33 @@ export class FileIndex {
 	}
 
 	/** Look up a file by its mount and reversible id. */
-	lookup(mount: string, id: string): ResolvedPath | undefined {
-		const relativePath = decodePathId(id);
-		if (relativePath === undefined) {
-			return undefined;
+	lookup(mount: string, id: string): FileIndexLookupResult {
+		const decoded = decodePathId(id);
+		if (!decoded.ok) {
+			return { ok: false, error: decoded.error };
 		}
 
 		if (!/^[a-zA-Z0-9]+$/.test(mount)) {
-			return undefined;
+			return { ok: false, error: "invalid mount name" };
 		}
 
 		const basePath = this.mounts[mount];
 		if (!basePath) {
-			return undefined;
+			return { ok: false, error: "mount not found" };
 		}
 
 		const resolvedBase = resolve(basePath);
-		const realPath = resolve(join(resolvedBase, relativePath));
+		const realPath = resolve(join(resolvedBase, decoded.value));
 
 		// Security boundary: prevent directory traversal.
 		if (realPath !== resolvedBase && !realPath.startsWith(`${resolvedBase}/`)) {
-			return undefined;
+			return { ok: false, error: "path traversal detected" };
 		}
 
-		return { mount, relativePath, realPath };
+		return {
+			ok: true,
+			value: { mount, relativePath: decoded.value, realPath },
+		};
 	}
 
 	/**

@@ -23,12 +23,17 @@ export const resolveFileId = createMiddleware<{
 	}
 
 	const resolved = c.var.fileIndex.lookup(mount, id);
-	if (!resolved) {
-		return c.json({ error: "File not found" }, 404);
+	if (!resolved.ok) {
+		const status =
+			resolved.error === "mount not found" ||
+			resolved.error === "path traversal detected"
+				? 404
+				: 400;
+		return c.json({ error: resolved.error }, status);
 	}
 
-	c.set("mount", resolved.mount);
-	c.set("relativePath", resolved.relativePath);
-	c.set("realPath", resolved.realPath);
+	c.set("mount", resolved.value.mount);
+	c.set("relativePath", resolved.value.relativePath);
+	c.set("realPath", resolved.value.realPath);
 	return next();
 });

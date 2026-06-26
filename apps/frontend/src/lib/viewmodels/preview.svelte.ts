@@ -17,7 +17,8 @@ export class PreviewViewModel {
 
 	directUrl = $state<string | null>(null);
 	error = $state<Error | null>(null);
-	isLoading = $state(true);
+	fileName = $state("");
+	category = $derived(fileCategory(this.fileName));
 
 	constructor(nodeId: string, mountName: string, fileId: string) {
 		this.nodeId = nodeId;
@@ -25,19 +26,18 @@ export class PreviewViewModel {
 		this.fileId = fileId;
 	}
 
-	get fileName(): string {
-		return fileNameFromPathId(this.fileId) ?? this.fileId;
-	}
-
-	get category(): PreviewCategory {
-		return fileCategory(this.fileName);
-	}
-
 	/** Triggers an immediate URL build attempt.
 	 * Call from the component's $effect or onMount. */
-	load(): void {
-		this.isLoading = true;
+	updateFileUrl(): void {
 		this.error = null;
+
+		const decoded = fileNameFromPathId(this.fileId);
+		if (decoded.ok) {
+			this.fileName = decoded.value;
+		} else {
+			this.error = new Error(decoded.error);
+			return;
+		}
 
 		const node = nodeInfoManager.getNodeById(this.nodeId);
 		if (node?.publicUrl) {
@@ -47,6 +47,5 @@ export class PreviewViewModel {
 
 	#setUrl(publicUrl: string): void {
 		this.directUrl = `http://${publicUrl}/file/${encodeURIComponent(this.mountName)}/${encodeURIComponent(this.fileId)}`;
-		this.isLoading = false;
 	}
 }

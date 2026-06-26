@@ -9,7 +9,12 @@
  * so the same implementation works in the browser and in Bun.
  */
 
+import type { Result } from "./types";
+
 const encoder = new TextEncoder();
+
+/** Result of decoding a path id. */
+export type DecodePathIdResult = Result<string>;
 
 /**
  * Encode a relative path into a URL-safe id.
@@ -18,35 +23,52 @@ const encoder = new TextEncoder();
  * @returns Base64url-encoded id.
  */
 export function encodePathId(relativePath: string): string {
-	const bytes = encoder.encode(relativePath);
-	let binary = "";
-	for (let i = 0; i < bytes.length; i++) {
-		binary += String.fromCharCode(bytes[i]);
-	}
-	return btoa(binary)
-		.replace(/\+/g, "-")
-		.replace(/\//g, "_")
-		.replace(/=+$/, "");
+	return bytesToBase64Url(encoder.encode(relativePath));
 }
 
 /**
  * Decode a URL-safe id back into its relative path.
  *
  * @param id - Base64url-encoded id.
- * @returns The decoded relative path, or `undefined` if the id is malformed.
+ * @returns A result containing the decoded relative path or an error message.
  */
-export function decodePathId(id: string): string | undefined {
-	try {
-		const base64 =
-			id.replace(/-/g, "+").replace(/_/g, "/") +
-			"=".repeat((4 - (id.length % 4)) % 4);
-		const binary = atob(base64);
-		const bytes = new Uint8Array(binary.length);
-		for (let i = 0; i < binary.length; i++) {
-			bytes[i] = binary.charCodeAt(i);
-		}
-		return new TextDecoder().decode(bytes);
-	} catch {
-		return undefined;
+export function decodePathId(id: string): DecodePathIdResult {
+	if (id === "") {
+		return { ok: true, value: "" };
 	}
+
+	if (!isBase64Url(id)) {
+		return { ok: false, error: "id contains invalid characters" };
+	}
+
+	try {
+		const path = new TextDecoder().decode(base64UrlToBytes(id));
+		return { ok: true, value: path };
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "failed to decode id";
+		return { ok: false, error: message };
+	}
+}
+
+function isBase64Url(id: string): boolean {
+	return /^[A-Za-z0-9_-]+$/.test(id);
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+	const binary = Array.from(bytes).reduce(
+		(acc, byte) => acc + String.fromCharCode(byte),
+		"",
+	);
+	return btoa(binary)
+		.replace(/\+/g, "-")
+		.replace(/\//g, "_")
+		.replace(/=+$/, "");
+}
+
+function base64UrlToBytes(id: string): Uint8Array {
+	const base64 = id.replace(/-/g, "+").replace(/_/g, "/");
+	const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+	const binary = atob(`${base64}${padding}`);
+	const bytes = Array.from(binary).map((char) => char.charCodeAt(0));
+	return new Uint8Array(bytes);
 }

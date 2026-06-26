@@ -35,45 +35,57 @@ describe("FileIndex", () => {
 		const id = index.getId("data", "folder/b.txt");
 
 		expect(id).toBe(encodePathId("folder/b.txt"));
-		expect(decodePathId(id)).toBe("folder/b.txt");
+
+		const decoded = decodePathId(id);
+		expect(decoded).toEqual({ ok: true, value: "folder/b.txt" });
 	});
 
 	it("lookup resolves the correct real path", () => {
 		const index = new FileIndex({ data: mountPath });
 		const id = encodePathId("folder/b.txt");
-		const resolved = index.lookup("data", id);
+		const result = index.lookup("data", id);
 
-		expect(resolved).toEqual({
-			mount: "data",
-			relativePath: "folder/b.txt",
-			realPath: join(nestedDir, "b.txt"),
+		expect(result).toEqual({
+			ok: true,
+			value: {
+				mount: "data",
+				relativePath: "folder/b.txt",
+				realPath: join(nestedDir, "b.txt"),
+			},
 		});
 	});
 
-	it("lookup returns undefined for an unknown mount", () => {
+	it("lookup returns an error for an unknown mount", () => {
 		const index = new FileIndex({ data: mountPath });
 		const id = encodePathId("a.txt");
+		const result = index.lookup("unknown", id);
 
-		expect(index.lookup("unknown", id)).toBeUndefined();
+		expect(result).toEqual({ ok: false, error: "mount not found" });
 	});
 
-	it("lookup returns undefined for an invalid id", () => {
+	it("lookup returns an error for an invalid id", () => {
 		const index = new FileIndex({ data: mountPath });
+		const result = index.lookup("data", "not-valid-base64!!!");
 
-		expect(index.lookup("data", "not-valid-base64!!!")).toBeUndefined();
+		expect(result).toEqual({
+			ok: false,
+			error: "id contains invalid characters",
+		});
 	});
 
-	it("lookup returns undefined for a traversal attempt", () => {
+	it("lookup returns an error for a traversal attempt", () => {
 		const index = new FileIndex({ data: mountPath });
 		const id = encodePathId("../secret.txt");
+		const result = index.lookup("data", id);
 
-		expect(index.lookup("data", id)).toBeUndefined();
+		expect(result).toEqual({ ok: false, error: "path traversal detected" });
 	});
 
-	it("lookup returns undefined for an invalid mount name", () => {
+	it("lookup returns an error for an invalid mount name", () => {
 		const index = new FileIndex({ data: mountPath });
 		const id = encodePathId("a.txt");
+		const result = index.lookup("data/../../etc", id);
 
-		expect(index.lookup("data/../../etc", id)).toBeUndefined();
+		expect(result).toEqual({ ok: false, error: "invalid mount name" });
 	});
 });

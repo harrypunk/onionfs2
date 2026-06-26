@@ -14,7 +14,7 @@
 	);
 
 	$effect(() => {
-		viewModel.load();
+		viewModel.updateFileUrl();
 	});
 </script>
 
@@ -38,9 +38,7 @@
 			</div>
 		{/if}
 
-		{#if viewModel.isLoading}
-			<div class="notification is-light">Loading file location…</div>
-		{:else if viewModel.directUrl}
+		{#if viewModel.directUrl}
 			{#if viewModel.category === "image"}
 				<figure class="image preview-container">
 					<img src={viewModel.directUrl} alt={viewModel.fileName} />

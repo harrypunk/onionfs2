@@ -4,25 +4,33 @@ import { decodePathId, encodePathId } from "./path-id";
 describe("encodePathId / decodePathId", () => {
 	it("round-trips a simple relative path", () => {
 		const id = encodePathId("folder/file.txt");
-		expect(decodePathId(id)).toBe("folder/file.txt");
+		const result = decodePathId(id);
+
+		expect(result).toEqual({ ok: true, value: "folder/file.txt" });
 	});
 
 	it("round-trips an empty path (mount root)", () => {
 		const id = encodePathId("");
+		const result = decodePathId(id);
+
 		expect(id).toBe("");
-		expect(decodePathId(id)).toBe("");
+		expect(result).toEqual({ ok: true, value: "" });
 	});
 
 	it("round-trips a nested directory path", () => {
 		const path = "a/b/c/d";
 		const id = encodePathId(path);
-		expect(decodePathId(id)).toBe(path);
+		const result = decodePathId(id);
+
+		expect(result).toEqual({ ok: true, value: path });
 	});
 
 	it("round-trips unicode paths", () => {
 		const path = "movies/你好世界.mp4";
 		const id = encodePathId(path);
-		expect(decodePathId(id)).toBe(path);
+		const result = decodePathId(id);
+
+		expect(result).toEqual({ ok: true, value: path });
 	});
 
 	it("produces a URL-safe string without padding", () => {
@@ -33,7 +41,12 @@ describe("encodePathId / decodePathId", () => {
 		expect(id).not.toContain("/");
 	});
 
-	it("returns undefined for malformed ids", () => {
-		expect(decodePathId("not-valid!!!")).toBeUndefined();
+	it("returns an error for malformed ids", () => {
+		const result = decodePathId("not-valid!!!");
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error).toBe("id contains invalid characters");
+		}
 	});
 });

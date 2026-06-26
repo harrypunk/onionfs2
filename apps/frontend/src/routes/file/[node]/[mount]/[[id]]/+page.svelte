@@ -13,15 +13,16 @@
 	const mountName = decodeURIComponent(page.params.mount ?? "");
 
 	const id = $derived(page.params.id ?? "");
-	const dir = $derived(decodePathId(id));
-	const decodeError = $derived(dir === undefined);
+	const decoded = $derived(decodePathId(id));
+	const decodeError = $derived(!decoded.ok);
+	const dir = $derived(decoded.ok ? decoded.value : "");
 	const pathSegments = $derived(dir ? dir.split("/") : []);
 
 	// Recreate the view-model whenever the directory path changes.
 	// SvelteKit reuses this component on client-side navigation, so `onMount`
 	// alone is not enough.
 	const viewModel = $derived.by(
-		() => new FileBrowserViewModel(nodeId, mountName, dir ?? ""),
+		() => new FileBrowserViewModel(nodeId, mountName, dir),
 	);
 
 	$effect(() => {
