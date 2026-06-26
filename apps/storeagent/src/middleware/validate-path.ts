@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { validateRelativePath } from "@/lib/filepath-validate";
+import { log } from "@/logging";
 import type { Variables } from "@/types";
 
 /**
@@ -18,11 +19,17 @@ export const validatePath = createMiddleware<{ Variables: Variables }>(
 		const relativePath = c.req.query("file") ?? c.req.query("dir") ?? "";
 
 		if (!mount || !/^[a-zA-Z0-9]+$/.test(mount)) {
+			log.warn(
+				`Invalid mount name in ${c.req.method} ${c.req.url}: mount=${mount}`,
+			);
 			return c.json({ error: "Invalid mount name" }, 400);
 		}
 
 		const pathError = validateRelativePath(relativePath);
 		if (pathError) {
+			log.warn(
+				`Invalid path in ${c.req.method} ${c.req.url}: path=${relativePath} reason=${pathError}`,
+			);
 			return c.json({ error: `Invalid path: ${pathError}` }, 400);
 		}
 

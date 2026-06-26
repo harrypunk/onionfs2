@@ -5,7 +5,7 @@
 	interface Props {
 		entry: FsEntry;
 		entryHref?: (name: string) => string;
-		fileHref?: (name: string) => string;
+		fileHref?: (entry: FsEntry) => string;
 		selected?: boolean;
 		onToggle?: (selected: boolean) => void;
 	}
@@ -20,7 +20,7 @@
 
 	const Icon = $derived(entryIcon(entry.type));
 	const href = $derived(
-		entry.type === 1 ? entryHref?.(entry.name) : fileHref?.(entry.name),
+		entry.type === 1 ? entryHref?.(entry.name) : fileHref?.(entry),
 	);
 </script>
 

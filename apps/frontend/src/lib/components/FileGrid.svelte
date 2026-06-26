@@ -6,7 +6,7 @@
 	interface Props {
 		entries: FsEntry[];
 		entryHref?: (name: string) => string;
-		fileHref?: (name: string) => string;
+		fileHref?: (entry: FsEntry) => string;
 		sortKey: SortKey;
 		isAscending: boolean;
 		onSort: (key: SortKey) => void;

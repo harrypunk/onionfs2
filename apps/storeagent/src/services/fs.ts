@@ -4,7 +4,7 @@ import { forkJoin, type Observable, of, throwError } from "rxjs";
 import { catchError, map, mergeMap } from "rxjs/operators";
 import { FsError, FsErrorCode } from "@/lib/fs-error";
 import type { ByteRange } from "@/lib/range";
-import { fileStream, readDir, stat } from "@/repositories/fs";
+import { fileBlob, readDir, stat } from "@/repositories/fs";
 
 /** File-type bitmask enum. */
 export enum FileType {
@@ -73,20 +73,21 @@ function assertIsFile(stats: Stats): Stats {
 	return stats;
 }
 
-/** File stream with its total byte size. */
+/** File body with its total byte size. */
 export interface FileStream {
-	stream: ReadableStream;
+	body: Blob;
 	size: number;
 }
 
 /**
- * Open a file as a byte stream.
+ * Validates the path is a file, then delegates to the repository. Returning a
+ * native Bun file blob lets the HTTP layer use Bun's zero-copy sendfile path
+ * instead of a slow JavaScript ReadableStream pump.
  *
- * Validates the path is a file, then delegates streaming to the repository.
- *
- * @param path   Absolute path to the file.
- * @param range  Optional byte range `{ start, end? }`.
- * @returns      Observable that emits once with the stream and metadata.
+ * @param path    Absolute path to the file.
+ * @param range   Optional byte range `{ start, end? }`.
+ * @param signal  Optional abort signal; aborts before or during stat/slice.
+ * @returns       Observable that emits once with the body and metadata.
  */
 export function getFileContent(
 	path: string,
@@ -98,7 +99,7 @@ export function getFileContent(
 			const start = range?.start ?? 0;
 			const end = range?.end !== undefined ? range.end + 1 : undefined;
 			return {
-				stream: fileStream(path, start, end),
+				body: fileBlob(path, start, end),
 				size: stats.size,
 			};
 		}),

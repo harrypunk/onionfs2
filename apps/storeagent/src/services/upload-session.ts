@@ -2,6 +2,8 @@
 export interface UploadSession {
 	targetPath: string;
 	tempDir: string;
+	mount: string;
+	relativePath: string;
 }
 
 /**

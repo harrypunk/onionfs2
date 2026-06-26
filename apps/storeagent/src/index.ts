@@ -9,7 +9,7 @@ import { createAnnounceHeartbeat } from "@/nats/heartbeat";
 const cfg = await loadConfig();
 log.debug("Config loaded:", JSON.stringify(cfg, null, 2));
 
-const app = createApp(cfg);
+const app = await createApp(cfg);
 
 createNatsConnection(cfg.nats_server)
 	.pipe(

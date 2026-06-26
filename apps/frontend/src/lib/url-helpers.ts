@@ -1,20 +1,17 @@
 import { resolve } from "$app/paths";
+import { encodePathId, decodePathId } from "@onionfs2/shared";
 
 export function buildBrowseUrl(
 	nodeId: string,
 	mountName: string,
 	dir = "",
 ): string {
-	return dir
-		? resolve("/file/[node]/[mount]/[...path]", {
-				node: nodeId,
-				mount: mountName,
-				path: dir,
-			})
-		: resolve("/file/[node]/[mount]", {
-				node: nodeId,
-				mount: mountName,
-			});
+	const id = encodePathId(dir);
+	return resolve("/file/[node]/[mount]/[[id]]", {
+		node: nodeId,
+		mount: mountName,
+		id,
+	});
 }
 
 export function buildPreviewUrl(
@@ -22,9 +19,19 @@ export function buildPreviewUrl(
 	mountName: string,
 	filePath: string,
 ): string {
-	return resolve("/preview/[node]/[mount]/[...path]", {
+	const id = encodePathId(filePath);
+	return resolve("/preview/[node]/[mount]/[id]", {
 		node: nodeId,
 		mount: mountName,
-		path: filePath,
+		id,
 	});
+}
+
+export function fileNameFromPathId(id: string): string | undefined {
+	const path = decodePathId(id);
+	if (path === undefined) {
+		return undefined;
+	}
+	const segments = path.split("/");
+	return segments[segments.length - 1];
 }

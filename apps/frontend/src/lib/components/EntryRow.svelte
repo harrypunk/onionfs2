@@ -5,7 +5,7 @@
 	interface Props {
 		entry: FsEntry;
 		entryHref?: (name: string) => string;
-		fileHref?: (name: string) => string;
+		fileHref?: (entry: FsEntry) => string;
 		selected?: boolean;
 		onToggle?: (selected: boolean) => void;
 	}
@@ -38,7 +38,7 @@
 			{#if entry.type === 1 && entryHref}
 				<a href={entryHref(entry.name)}>{entry.name}</a>
 			{:else if fileHref}
-				<a href={fileHref(entry.name)}>{entry.name}</a>
+				<a href={fileHref(entry)}>{entry.name}</a>
 			{:else}
 				<span>{entry.name}</span>
 			{/if}

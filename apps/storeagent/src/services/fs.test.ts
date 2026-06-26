@@ -29,26 +29,10 @@ describe("getFileContent", () => {
 		rmdirSync(tmp);
 	});
 
-	it("returns stream and correct size for an existing file", async () => {
-		const { stream, size } = await firstValueFrom(getFileContent(testFile));
+	it("returns body and correct size for an existing file", async () => {
+		const { body, size } = await firstValueFrom(getFileContent(testFile));
 		expect(size).toBe(testContent.length);
-
-		const reader = stream.getReader();
-		const chunks: Uint8Array[] = [];
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			chunks.push(value);
-		}
-		const decoded = new TextDecoder().decode(
-			chunks.reduce((acc, chunk) => {
-				const merged = new Uint8Array(acc.length + chunk.length);
-				merged.set(acc);
-				merged.set(chunk, acc.length);
-				return merged;
-			}, new Uint8Array(0)),
-		);
-		expect(decoded).toBe(testContent);
+		expect(await body.text()).toBe(testContent);
 	});
 
 	it("throws NotFound for a missing file", async () => {
@@ -67,28 +51,12 @@ describe("getFileContent", () => {
 		expect(err.code).toBe(FsErrorCode.NotAFile);
 	});
 
-	it("returns sliced stream for a byte range", async () => {
-		const { stream, size } = await firstValueFrom(
+	it("returns sliced body for a byte range", async () => {
+		const { body, size } = await firstValueFrom(
 			getFileContent(testFile, { start: 7, end: 11 }),
 		);
 		expect(size).toBe(testContent.length);
-
-		const reader = stream.getReader();
-		const chunks: Uint8Array[] = [];
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			chunks.push(value);
-		}
-		const decoded = new TextDecoder().decode(
-			chunks.reduce((acc, chunk) => {
-				const merged = new Uint8Array(acc.length + chunk.length);
-				merged.set(acc);
-				merged.set(chunk, acc.length);
-				return merged;
-			}, new Uint8Array(0)),
-		);
-		expect(decoded).toBe("world");
+		expect(await body.text()).toBe("world");
 	});
 });
 

@@ -1,3 +1,4 @@
+import { fileNameFromPathId } from "$lib/url-helpers";
 import { fileCategory } from "$lib/file-category";
 import { nodeInfoManager } from "$lib/managers/NodeInfoMg.svelte";
 
@@ -12,20 +13,20 @@ export type PreviewCategory = ReturnType<typeof fileCategory>;
 export class PreviewViewModel {
 	readonly nodeId: string;
 	readonly mountName: string;
-	readonly filePath: string;
+	readonly fileId: string;
 
 	directUrl = $state<string | null>(null);
 	error = $state<Error | null>(null);
 	isLoading = $state(true);
 
-	constructor(nodeId: string, mountName: string, filePath: string) {
+	constructor(nodeId: string, mountName: string, fileId: string) {
 		this.nodeId = nodeId;
 		this.mountName = mountName;
-		this.filePath = filePath;
+		this.fileId = fileId;
 	}
 
 	get fileName(): string {
-		return this.filePath.split("/").pop() ?? "";
+		return fileNameFromPathId(this.fileId) ?? this.fileId;
 	}
 
 	get category(): PreviewCategory {
@@ -45,8 +46,7 @@ export class PreviewViewModel {
 	}
 
 	#setUrl(publicUrl: string): void {
-		const query = `mount=${encodeURIComponent(this.mountName)}&dir=${encodeURIComponent(this.filePath)}`;
-		this.directUrl = `http://${publicUrl}/fs/get?${query}`;
+		this.directUrl = `http://${publicUrl}/file/${encodeURIComponent(this.mountName)}/${encodeURIComponent(this.fileId)}`;
 		this.isLoading = false;
 	}
 }

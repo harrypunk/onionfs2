@@ -89,13 +89,17 @@ export function uploadFile(
  */
 export function createMultipartSession(
 	targetPath: string,
+	mount: string,
+	relativePath: string,
 	manager: UploadSessionManager,
 ): Observable<string> {
 	const uploadId = crypto.randomUUID();
 	const tempDir = `${targetPath}-upload-${uploadId}`;
 
 	return wrapFsError(
-		defer(() => manager.save(uploadId, { targetPath, tempDir })).pipe(
+		defer(() =>
+			manager.save(uploadId, { targetPath, tempDir, mount, relativePath }),
+		).pipe(
 			switchMap(() => mkdir(tempDir, { recursive: true })),
 			map(() => uploadId),
 		),
@@ -151,7 +155,12 @@ export function uploadPart(
 export function completeMultipartUpload(
 	uploadId: string,
 	manager: UploadSessionManager,
-): Observable<{ path: string; size: number }> {
+): Observable<{
+	path: string;
+	size: number;
+	mount: string;
+	relativePath: string;
+}> {
 	return wrapFsError(
 		defer(() => manager.get(uploadId)).pipe(
 			switchMap((session) => {
@@ -190,6 +199,8 @@ export function completeMultipartUpload(
 							map(() => ({
 								path: session.targetPath,
 								size: Bun.file(session.targetPath).size,
+								mount: session.mount,
+								relativePath: session.relativePath,
 							})),
 						),
 					),

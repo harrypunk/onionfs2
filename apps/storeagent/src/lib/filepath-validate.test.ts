@@ -34,6 +34,26 @@ describe("validateRelativePath", () => {
 		it("accepts mixed valid chars", () => {
 			expect(validateRelativePath("a-b_c.d/e-f_g.h")).toBeUndefined();
 		});
+
+		it("accepts CJK characters", () => {
+			expect(validateRelativePath("照片/東京.jpg")).toBeUndefined();
+		});
+
+		it("accepts Arabic characters", () => {
+			expect(validateRelativePath("ملف/تجربة.pdf")).toBeUndefined();
+		});
+
+		it("accepts Cyrillic characters", () => {
+			expect(validateRelativePath("документы/фото.png")).toBeUndefined();
+		});
+
+		it("accepts accented Latin characters", () => {
+			expect(validateRelativePath("café/résumé.txt")).toBeUndefined();
+		});
+
+		it("accepts numbers after the first character", () => {
+			expect(validateRelativePath("file2/photo3.jpg")).toBeUndefined();
+		});
 	});
 
 	describe("invalid paths", () => {

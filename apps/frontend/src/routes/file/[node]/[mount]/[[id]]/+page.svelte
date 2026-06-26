@@ -6,20 +6,22 @@
 	} from "$lib/components/PathBreadcrumb.svelte";
 	import { FileBrowserViewModel } from "$lib/viewmodels/file-browser.svelte";
 	import { buildBrowseUrl, buildPreviewUrl } from "$lib/url-helpers";
+	import { decodePathId } from "@onionfs2/shared";
+	import type { FsEntry } from "$lib/types";
 
 	const nodeId = decodeURIComponent(page.params.node ?? "");
 	const mountName = decodeURIComponent(page.params.mount ?? "");
 
-	// `trailingSlash = "always"` keeps a trailing slash in the URL.
-	// Strip it so path math and API calls are consistent.
-	const dir = $derived((page.params.path ?? "").replace(/\/+$/, ""));
+	const id = $derived(page.params.id ?? "");
+	const dir = $derived(decodePathId(id));
+	const decodeError = $derived(dir === undefined);
 	const pathSegments = $derived(dir ? dir.split("/") : []);
 
 	// Recreate the view-model whenever the directory path changes.
 	// SvelteKit reuses this component on client-side navigation, so `onMount`
 	// alone is not enough.
 	const viewModel = $derived.by(
-		() => new FileBrowserViewModel(nodeId, mountName, dir),
+		() => new FileBrowserViewModel(nodeId, mountName, dir ?? ""),
 	);
 
 	$effect(() => {
@@ -64,8 +66,8 @@
 		return buildBrowseUrl(nodeId, mountName, nextDir);
 	}
 
-	function fileHref(entryName: string): string {
-		const filePath = dir ? `${dir}/${entryName}` : entryName;
+	function fileHref(entry: FsEntry): string {
+		const filePath = dir ? `${dir}/${entry.name}` : entry.name;
 		return buildPreviewUrl(nodeId, mountName, filePath);
 	}
 </script>
@@ -77,7 +79,9 @@
 		<h1 class="title is-3">{mountName}</h1>
 		<p class="subtitle is-5 has-text-grey">{nodeId}</p>
 
-		{#if viewModel.error}
+		{#if decodeError}
+			<div class="notification is-danger">Invalid path id.</div>
+		{:else if viewModel.error}
 			<div class="notification is-danger">{viewModel.error}</div>
 		{:else if viewModel.isLoading}
 			<div class="notification is-light">Loading directory…</div>

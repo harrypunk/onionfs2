@@ -9,7 +9,7 @@
 	interface Props {
 		entries: FsEntry[];
 		entryHref?: (name: string) => string;
-		fileHref?: (name: string) => string;
+		fileHref?: (entry: FsEntry) => string;
 		onAction?: (action: FileAction, entries: FsEntry[]) => void;
 	}
 

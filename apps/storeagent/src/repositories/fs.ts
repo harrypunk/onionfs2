@@ -1,4 +1,6 @@
 import { readdir as readdirCb, type Stats, stat as statCb } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
 import { Observable } from "rxjs";
 import { fromNodeError } from "@/lib/fs-error";
 
@@ -43,16 +45,45 @@ export function stat(path: string): Observable<Stats> {
 }
 
 /**
- * Open a readable byte stream for a file.
+ * Open a sliced file blob for reading.
  *
- * Raw I/O — no validation. The caller must ensure the path exists and is
- * a file before calling this.
+ * Returns the native Bun file slice instead of a ReadableStream so that
+ * `new Response()` can use Bun's zero-copy sendfile path. The caller must
+ * ensure the path exists and is a file before calling this.
  */
-export function fileStream(
-	path: string,
-	start?: number,
-	end?: number,
-): ReadableStream {
+export function fileBlob(path: string, start?: number, end?: number): Blob {
 	const file = Bun.file(path);
-	return file.slice(start ?? 0, end).stream();
+	return file.slice(start ?? 0, end);
+}
+
+/**
+ * Recursively list all regular files under a directory.
+ *
+ * Returns absolute paths. Directories are traversed; non-file entries are
+ * ignored.
+ */
+export function walkFiles(path: string): Observable<string[]> {
+	return new Observable((subscriber) => {
+		const files: string[] = [];
+
+		const walk = async (dir: string): Promise<void> => {
+			const entries = await readdir(dir, { withFileTypes: true });
+			for (const entry of entries) {
+				const fullPath = join(dir, entry.name);
+				if (entry.isDirectory()) {
+					await walk(fullPath);
+				} else if (entry.isFile()) {
+					files.push(fullPath);
+				}
+			}
+		};
+
+		walk(path).then(
+			() => {
+				subscriber.next(files);
+				subscriber.complete();
+			},
+			(err) => subscriber.error(fromNodeError(err)),
+		);
+	});
 }

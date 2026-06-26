@@ -13,6 +13,8 @@ export interface FsEntry {
 	name: string;
 	type: number;
 	size?: number;
+	/** Opaque id for direct file access via the agent's `/file/:id` endpoint. */
+	id?: string;
 }
 
 export enum SortKey {

@@ -1,0 +1,13 @@
+{
+	"bind_addr": "127.0.0.1",
+	"bind_port": 9999,
+	"nats_server": "localhost:4222",
+	"mounts": {
+		"videos": "/home/j9/Downloads/test-onionfs"
+	},
+	"node_id": "bench",
+	"cluster_url": "bench.local",
+	"public_url": "127.0.0.1:9999",
+	"announce_interval_sec": 300,
+	"range_chunk_size": 33554432
+}

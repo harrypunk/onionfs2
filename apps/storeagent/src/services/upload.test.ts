@@ -73,7 +73,7 @@ describe("multipart upload", () => {
 		const target = join(dir, "final.bin");
 
 		const uploadId = await firstValueFrom(
-			createMultipartSession(target, manager),
+			createMultipartSession(target, "test", "final.bin", manager),
 		);
 		expect(uploadId).toBeString();
 
@@ -123,7 +123,7 @@ describe("multipart upload", () => {
 		const dir = tempDir();
 		const target = join(dir, "final.bin");
 		const uploadId = await firstValueFrom(
-			createMultipartSession(target, manager),
+			createMultipartSession(target, "test", "final.bin", manager),
 		);
 
 		const err = (await firstValueFrom(

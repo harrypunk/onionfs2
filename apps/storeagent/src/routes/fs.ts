@@ -1,26 +1,20 @@
 import { Hono } from "hono";
 import { firstValueFrom } from "rxjs";
-import { fileHeaders } from "@/lib/file-response";
-import { capRange, parseRangeHeader } from "@/lib/range";
 import { resolvePath } from "@/middleware/resolve-path";
 import { validatePath } from "@/middleware/validate-path";
+import { handleFileGet } from "@/routes/file-get-handler";
 import { fsErrorResponse } from "@/routes/fs-error-handler";
-import { getFileContent, listDir } from "@/services/fs";
+import { FileType, listDir } from "@/services/fs";
 import {
 	completeMultipartUpload,
 	createMultipartSession,
 	uploadFile,
 	uploadPart,
 } from "@/services/upload";
-import type { Variables } from "@/types";
-
-/** Maximum bytes served for a single range request. 32 MB works well over LAN. */
-const MAX_RANGE_CHUNK = 32 * 1024 * 1024;
+import type { FilePathVariables } from "@/types";
 
 /** Extended variables available inside `/fs` routes after middleware runs. */
-type FsVariables = Variables & {
-	realPath: string;
-};
+type FsVariables = FilePathVariables;
 
 /** Hono sub-router for file-system endpoints under `/fs`. */
 const fsRoutes = new Hono<{ Variables: FsVariables }>();
@@ -66,7 +60,7 @@ fsRoutes.post("/multipart/complete", (c) => {
 	return firstValueFrom(
 		completeMultipartUpload(uploadId, c.var.uploadSessionManager),
 	).then(
-		(result) => c.json(result),
+		(result) => c.json({ path: result.path, size: result.size }),
 		(err) => fsErrorResponse(c, err, "Failed to complete upload"),
 	);
 });
@@ -106,8 +100,14 @@ fsRoutes.post("/upload", (c) => {
  */
 fsRoutes.post("/multipart/init", (c) => {
 	const realPath = c.var.realPath;
+
 	return firstValueFrom(
-		createMultipartSession(realPath, c.var.uploadSessionManager),
+		createMultipartSession(
+			realPath,
+			c.var.mount,
+			c.var.relativePath,
+			c.var.uploadSessionManager,
+		),
 	).then(
 		(uploadId) => c.json({ uploadId }),
 		(err) => fsErrorResponse(c, err, "Failed to create upload session"),
@@ -121,9 +121,22 @@ fsRoutes.post("/multipart/init", (c) => {
  */
 fsRoutes.get("/list", (c) => {
 	const realPath = c.var.realPath;
+	const mount = c.var.mount;
+	const relativePath = c.var.relativePath;
 
 	return firstValueFrom(listDir(realPath)).then(
-		(result) => c.json(result),
+		(result) => {
+			const entries = result.entries.map((entry) => {
+				if (entry.type !== FileType.File) {
+					return entry;
+				}
+				const entryRelPath = relativePath
+					? `${relativePath}/${entry.name}`
+					: entry.name;
+				return { ...entry, id: c.var.fileIndex.getId(mount, entryRelPath) };
+			});
+			return c.json({ path: result.path, entries });
+		},
 		(err) => fsErrorResponse(c, err, "Failed to read directory"),
 	);
 });
@@ -135,44 +148,7 @@ fsRoutes.get("/list", (c) => {
  * partial content (bytes=start-end).
  */
 fsRoutes.get("/get", (c) => {
-	const realPath = c.var.realPath;
-	const range = parseRangeHeader(c.req.header("range"));
-
-	const effectiveRange = range
-		? {
-				start: range.start,
-				end:
-					range.end !== undefined
-						? Math.min(range.end, range.start + MAX_RANGE_CHUNK - 1)
-						: range.start + MAX_RANGE_CHUNK - 1,
-			}
-		: undefined;
-
-	return firstValueFrom(getFileContent(realPath, effectiveRange)).then(
-		({ stream, size }) => {
-			if (effectiveRange) {
-				if (effectiveRange.start >= size) {
-					return c.body(null, 416, {
-						"Content-Range": `bytes */${size}`,
-					});
-				}
-				const { contentLength, rangeSpec } = capRange(
-					size,
-					effectiveRange,
-					MAX_RANGE_CHUNK,
-				);
-				return new Response(stream, {
-					status: 206,
-					headers: fileHeaders(size, contentLength, rangeSpec),
-				});
-			}
-			return new Response(stream, {
-				status: 200,
-				headers: fileHeaders(size),
-			});
-		},
-		(err) => fsErrorResponse(c, err, "Failed to read file"),
-	);
+	return handleFileGet(c, c.var.realPath, c.var.config);
 });
 
 export default fsRoutes;

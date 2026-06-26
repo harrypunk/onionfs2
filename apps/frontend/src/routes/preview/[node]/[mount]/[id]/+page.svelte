@@ -4,13 +4,13 @@
 
 	const nodeId = decodeURIComponent(page.params.node ?? "");
 	const mountName = decodeURIComponent(page.params.mount ?? "");
-	const filePath = $derived(page.params.path ?? "");
+	const fileId = $derived(page.params.id ?? "");
 
-	// Recreate the view-model whenever the file path changes.
+	// Recreate the view-model whenever the id changes.
 	// SvelteKit reuses this component on client-side navigation, so `onMount`
 	// alone is not enough.
 	const viewModel = $derived.by(
-		() => new PreviewViewModel(nodeId, mountName, filePath),
+		() => new PreviewViewModel(nodeId, mountName, fileId),
 	);
 
 	$effect(() => {
