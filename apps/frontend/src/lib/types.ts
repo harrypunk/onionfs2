@@ -35,3 +35,7 @@ export enum FileAction {
 	Move = "move",
 	Delete = "delete",
 }
+
+export interface FileBrowserFsEntry extends FsEntry {
+	href: string;
+}

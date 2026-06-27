@@ -1,12 +1,10 @@
 <script lang="ts">
 	import EntryRow from "$lib/components/EntryRow.svelte";
 	import EntryTableHeader from "$lib/components/EntryTableHeader.svelte";
-	import { SortKey, type FsEntry } from "$lib/types";
+	import { SortKey, type FileBrowserFsEntry } from "$lib/types";
 
 	interface Props {
-		entries: FsEntry[];
-		entryHref?: (name: string) => string;
-		fileHref?: (entry: FsEntry) => string;
+		entries: FileBrowserFsEntry[];
 		sortKey: SortKey;
 		isAscending: boolean;
 		onSort: (key: SortKey) => void;
@@ -17,8 +15,6 @@
 
 	let {
 		entries,
-		entryHref,
-		fileHref,
 		sortKey,
 		isAscending,
 		onSort,
@@ -70,8 +66,6 @@
 		{#each entries as entry (entry.name)}
 			<EntryRow
 				{entry}
-				{entryHref}
-				{fileHref}
 				selected={selected.has(entry.name)}
 				onToggle={(checked) => onToggle(entry.name, checked)}
 			/>

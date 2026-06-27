@@ -1,12 +1,10 @@
 <script lang="ts">
 	import EntryCard from "$lib/components/EntryCard.svelte";
 	import SortBar from "$lib/components/SortBar.svelte";
-	import { SortKey, type FsEntry } from "$lib/types";
+	import { SortKey, type FileBrowserFsEntry } from "$lib/types";
 
 	interface Props {
-		entries: FsEntry[];
-		entryHref?: (name: string) => string;
-		fileHref?: (entry: FsEntry) => string;
+		entries: FileBrowserFsEntry[];
 		sortKey: SortKey;
 		isAscending: boolean;
 		onSort: (key: SortKey) => void;
@@ -17,8 +15,6 @@
 
 	let {
 		entries,
-		entryHref,
-		fileHref,
 		sortKey,
 		isAscending,
 		onSort,
@@ -51,8 +47,6 @@
 			<div role="listitem">
 				<EntryCard
 					{entry}
-					{entryHref}
-					{fileHref}
 					selected={selected.has(entry.name)}
 					onToggle={(checked) => onToggle(entry.name, checked)}
 				/>

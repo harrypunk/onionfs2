@@ -1,7 +1,9 @@
 <script lang="ts">
 	import HardDrive from "lucide-svelte/icons/hard-drive";
-	import { buildBrowseUrl } from "$lib/url-helpers";
+	import { getAppContainer } from "$lib/app/container";
 	import type { MountInfo } from "$lib/types";
+
+	const app = getAppContainer();
 
 	interface Props {
 		nodeId: string;
@@ -21,7 +23,10 @@
 		{#each mounts as mount (mount.name)}
 			<tr>
 				<td>
-					<a href={buildBrowseUrl(nodeId, mount.name)} class="icon-text">
+					<a
+						href={app.urlHelper.buildBrowseUrl(nodeId, mount.name)}
+						class="icon-text"
+					>
 						<span class="icon">
 							<HardDrive size={16} />
 						</span>

@@ -2,10 +2,7 @@ import type { StorybookConfig } from "@storybook/sveltekit";
 
 const config: StorybookConfig = {
 	stories: ["../src/lib/**/*.stories.@(ts|svelte)"],
-	addons: [
-		"@storybook/addon-essentials",
-		"@storybook/addon-svelte-csf",
-	],
+	addons: ["@storybook/addon-essentials", "@storybook/addon-svelte-csf"],
 	framework: {
 		name: "@storybook/sveltekit",
 		options: {},

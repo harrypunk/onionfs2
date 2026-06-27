@@ -12,10 +12,7 @@
 	const activeItem = { label: "Report.pdf", active: true };
 </script>
 
-<Story
-	name="Home only"
-	args={{ items: [homeItem] }}
-/>
+<Story name="Home only" args={{ items: [homeItem] }} />
 
 <Story
 	name="Nested path"

@@ -4,16 +4,19 @@
 	import FileList from "$lib/components/FileList.svelte";
 	import SelectionToolbar from "$lib/components/SelectionToolbar.svelte";
 	import ViewToggle from "$lib/components/ViewToggle.svelte";
-	import { FileAction, SortKey, ViewMode, type FsEntry } from "$lib/types";
+	import {
+		FileAction,
+		SortKey,
+		ViewMode,
+		type FileBrowserFsEntry,
+	} from "$lib/types";
 
 	interface Props {
-		entries: FsEntry[];
-		entryHref?: (name: string) => string;
-		fileHref?: (entry: FsEntry) => string;
-		onAction?: (action: FileAction, entries: FsEntry[]) => void;
+		entries: FileBrowserFsEntry[];
+		onAction?: (action: FileAction, entries: FileBrowserFsEntry[]) => void;
 	}
 
-	let { entries, entryHref, fileHref, onAction }: Props = $props();
+	let { entries, onAction }: Props = $props();
 
 	let sortKey = $state<SortKey>(SortKey.Name);
 	let isAscending = $state<boolean>(true);
@@ -103,8 +106,6 @@
 	{#if viewMode === ViewMode.List}
 		<FileList
 			entries={sortedEntries()}
-			{entryHref}
-			{fileHref}
 			{sortKey}
 			{isAscending}
 			onSort={toggleSort}
@@ -115,8 +116,6 @@
 	{:else}
 		<FileGrid
 			entries={sortedEntries()}
-			{entryHref}
-			{fileHref}
 			{sortKey}
 			{isAscending}
 			onSort={toggleSort}

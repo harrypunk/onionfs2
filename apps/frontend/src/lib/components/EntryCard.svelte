@@ -1,27 +1,17 @@
 <script lang="ts">
 	import { entryIcon } from "$lib/entry-helpers";
-	import type { FsEntry } from "$lib/types";
+	import type { FileBrowserFsEntry } from "$lib/types";
 
 	interface Props {
-		entry: FsEntry;
-		entryHref?: (name: string) => string;
-		fileHref?: (entry: FsEntry) => string;
+		entry: FileBrowserFsEntry;
 		selected?: boolean;
 		onToggle?: (selected: boolean) => void;
 	}
 
-	let {
-		entry,
-		entryHref,
-		fileHref,
-		selected = false,
-		onToggle,
-	}: Props = $props();
+	let { entry, selected = false, onToggle }: Props = $props();
 
 	const Icon = $derived(entryIcon(entry.type));
-	const href = $derived(
-		entry.type === 1 ? entryHref?.(entry.name) : fileHref?.(entry),
-	);
+	const href = $derived(entry.href);
 </script>
 
 <div class="card entry-card" class:is-selected={selected}>
