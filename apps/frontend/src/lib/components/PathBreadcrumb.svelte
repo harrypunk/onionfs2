@@ -3,10 +3,8 @@
 	export interface BreadcrumbItem {
 		/** Display text for the segment. */
 		label: string;
-		/** Navigation target; omitted for the current page or non-clickable segments. */
+		/** Navigation target; omitted when the segment has nowhere to go. */
 		href?: string;
-		/** Marks the current page segment, rendered as plain text with aria-current. */
-		current?: boolean;
 	}
 </script>
 
@@ -21,13 +19,11 @@
 	let { items }: Props = $props();
 </script>
 
-<!-- Bulma breadcrumb navigation.
-     The first item gets a home icon when it has a link.
-     The current-page segment is plain text so screen readers know where they are. -->
+<!-- Bulma breadcrumb navigation. Every segment with an href is clickable. -->
 <nav class="breadcrumb" aria-label="breadcrumbs">
 	<ul>
 		{#each items as item, index (item.label)}
-			<li class={item.current ? "is-active" : ""}>
+			<li>
 				{#if index === 0 && item.href}
 					<!-- Root/home segment: show a house icon plus its label. -->
 					<a href={item.href} class="icon-text">
@@ -36,13 +32,10 @@
 						</span>
 						<span>{item.label}</span>
 					</a>
-				{:else if item.current || !item.href}
-					<!-- Current page or segments without a link are non-clickable text. -->
-					<span aria-current={item.current ? "page" : undefined}
-						>{item.label}</span
-					>
-				{:else}
+				{:else if item.href}
 					<a href={item.href}>{item.label}</a>
+				{:else}
+					<span>{item.label}</span>
 				{/if}
 			</li>
 		{/each}

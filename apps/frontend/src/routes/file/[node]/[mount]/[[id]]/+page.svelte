@@ -32,21 +32,9 @@
 		);
 	});
 
-	const breadcrumbItems = $derived.by(() => {
-		const items = buildFilePathBreadcrumbs(
-			nodeId,
-			mountName,
-			filePath,
-			app.urlHelper,
-		);
-		// The last segment is the directory currently being viewed.
-		const last = items[items.length - 1];
-		if (last) {
-			last.href = undefined;
-			last.current = true;
-		}
-		return items;
-	});
+	const breadcrumbItems = $derived(
+		buildFilePathBreadcrumbs(nodeId, mountName, filePath, app.urlHelper),
+	);
 
 	$effect(() => {
 		viewModel.load();

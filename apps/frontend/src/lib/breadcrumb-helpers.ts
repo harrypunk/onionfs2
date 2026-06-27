@@ -2,10 +2,9 @@ import { decodePathId } from "@onionfs2/shared";
 import type { BreadcrumbItem } from "$lib/components/PathBreadcrumb.svelte";
 import type { UrlHelper } from "$lib/url-helpers";
 
-/** Build the clickable prefix shared by the file browser and preview pages.
+/** Build the clickable breadcrumb trail shared by the file browser and preview pages.
  *
  * Returns: Home → Node → Mount → one link per directory segment.
- * The caller marks the final segment (current directory or file) as active.
  *
  * @param filePath Decoded directory path relative to the mount root.
  *                 Empty string means we are at the mount root. */
@@ -18,11 +17,7 @@ export function buildFilePathBreadcrumbs(
 	const items: BreadcrumbItem[] = [
 		{ label: "Home", href: "/" },
 		{ label: nodeId, href: "/" },
-		// Mount always links to the mount root listing.
-		{
-			label: mountName,
-			href: urlHelper.buildBrowseUrl(nodeId, mountName, ""),
-		},
+		{ label: mountName, href: urlHelper.buildBrowseUrl(nodeId, mountName, "") },
 	];
 
 	const segments = filePath.split("/").filter(Boolean);
@@ -44,8 +39,7 @@ export function buildFilePathBreadcrumbs(
 
 /** Build breadcrumbs for the preview page from the encoded file id.
  *
- * The file's containing directory segments are clickable; the file name itself
- * is the active (current) segment. */
+ * Shows the directory path only; the file name is displayed by the page title. */
 export function buildPreviewBreadcrumbs(
 	nodeId: string,
 	mountName: string,
@@ -57,25 +51,13 @@ export function buildPreviewBreadcrumbs(
 		return [
 			{ label: "Home", href: "/" },
 			{ label: nodeId, href: "/" },
-			{
-				label: mountName,
-				href: urlHelper.buildBrowseUrl(nodeId, mountName, ""),
-			},
-			{ label: fileId, current: true },
+			{ label: mountName, href: urlHelper.buildBrowseUrl(nodeId, mountName, "") },
 		];
 	}
 
 	const fullPath = decoded.value;
 	const lastSlash = fullPath.lastIndexOf("/");
 	const dirPath = lastSlash === -1 ? "" : fullPath.slice(0, lastSlash);
-	const fileName = lastSlash === -1 ? fullPath : fullPath.slice(lastSlash + 1);
 
-	const items = buildFilePathBreadcrumbs(
-		nodeId,
-		mountName,
-		dirPath,
-		urlHelper,
-	);
-	items.push({ label: fileName, current: true });
-	return items;
+	return buildFilePathBreadcrumbs(nodeId, mountName, dirPath, urlHelper);
 }
