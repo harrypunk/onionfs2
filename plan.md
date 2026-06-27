@@ -2,14 +2,15 @@
 
 ## Current Status
 
-Last updated: 2026-06-24
+Last updated: 2026-06-27
 
 The project is a functional local prototype of a distributed filesystem agent.
 The backend can serve files, accept uploads, and announce itself over NATS.
-The frontend can display a live node overview, browse directories inside each node mount with sorting and icons, switch between list and grid views, and select entries via checkboxes for bulk actions.
-Phase 7 (list/grid view and selection toolbar) is finished; Phase 8 (file preview and download) is now in progress.
+The frontend can display a live node overview, browse directories inside each node mount with sorting and icons, switch between list and grid views, select entries via checkboxes for bulk actions, and preview images/videos or download other file types.
+Phase 7 (list/grid view and selection toolbar) and Phase 8 (file preview and download) are finished.
+Phase 9 (upload files) and later phases are pending.
 
-Working tree is clean; last commit is `557217a` (add list/grid toggle, checkbox selection, and bulk-action toolbar).
+Working tree is clean; last commit is `14df405` (replace native video player with ArtPlayer).
 
 ## What's Done
 
@@ -53,20 +54,32 @@ Working tree is clean; last commit is `557217a` (add list/grid toggle, checkbox 
   - Consumes `agent_heartbeats` JetStream consumer
   - Displays each node's ID, public URL, elapsed time since last heartbeat, and mount list
 - **Mount browser**
-  - Clicking a mount navigates to `/{node}/{mount}/`
-  - Optional catch-all route `/{node}/{mount}/[...path]/` supports arbitrary subdirectory URLs
+  - Clicking a mount navigates to `/file/{node}/{mount}/`
+  - Catch-all route `/file/{node}/{mount}/[[id]]/` supports arbitrary subdirectory URLs; the path is encoded as a reversible base64url id
   - Page discovers the node via NATS and lists directories via the agent's `GET /fs/list` API
-  - Breadcrumb navigation with path segments
+  - Breadcrumb navigation (`Home / Node / Mount / subdir1 / subdir2`) with clickable segments
   - Sortable columns (name, type, size) with `SortKey` enum and boolean direction
   - List/grid view toggle (`ViewMode`) with `EntryRow` and `EntryCard` layouts
   - Checkbox selection with select-all and a bulk-action toolbar (`SelectionToolbar`)
   - Simplified type column: "D" for directories, empty for files
+  - Full-row click areas for mounts and file entries
   - Lucide icons (home, folder, file, hard-drive) and human-readable size formatting
+- **File preview**
+  - Dedicated `/preview/{node}/{mount}/{id}` route
+  - Preview component registry maps `FileCategory` to viewer components
+  - Images rendered with a native `<img>` viewer
+  - Videos rendered with **ArtPlayer** (fullscreen, pip, settings, playback rate, aspect ratio)
+  - Other files show a download fallback
+- **Dependency injection**
+  - `AppContainer` wires `UrlHelper`, `NatsNodeDataSource`, `NodeInfoMg`, and view-models
+  - `UrlHelper` builds browse/preview URLs and is injectable for tests
 - **Components**
   - `NodeOverview`, `NodeCard`, `MountTable`
   - `PathBreadcrumb`, `EntryTable`, `EntryTableHeader`, `EntryRow`, `EntryCard`, `FileGrid`, `SelectionToolbar`, `ViewToggle`
+  - `ImagePreview`, `VideoPreview`, `FallbackPreview`
 - **State**
   - `NodeState` class using `SvelteMap` and `$state`/`$derived`/`$effect`
+  - `FileBrowserViewModel` and `PreviewViewModel` own loading, error handling, and URL generation
 
 ### Shared Package — `packages/shared`
 
@@ -78,17 +91,18 @@ Working tree is clean; last commit is `557217a` (add list/grid toggle, checkbox 
 These are the current limitations and areas for future work:
 
 - **Cross-node file operations** — the API only reads/writes the local node's filesystem. There is no node-to-node proxying, replication, or distributed routing yet.
-- **File downloads from the UI** — the browser page lists entries but cannot open, preview, or download files yet.
 - **No authentication or authorization** — all API endpoints are open.
 - **In-memory upload sessions** — multipart session state is stored in `InMemoryUploadSessionManager`; restarting the agent loses active uploads.
 - **No file deletion/rename API** — only list/get/upload operations exist.
+- **Bulk actions are UI-only** — the selection toolbar and checkboxes exist, but actions are not wired to backend endpoints.
 - **Frontend error UX is minimal** — NATS disconnections show a single error banner; no retry/back-off UI.
+- **Image viewer is basic** — the current image preview uses a plain `<img>` tag. A richer viewer with zoom/slides (e.g., PhotoSwipe) is planned but not implemented.
 
 ## Recent Changes
 
 - Extracted README documentation into `docs/` and simplified `README.md`.
 - Added CORS middleware to the agent so the browser can call its HTTP API directly.
-- Added a mount browser at `/{node}/{mount}/[...path]/` with subdirectory browsing, breadcrumbs, sorting, and icons.
+- Added a mount browser at `/file/{node}/{mount}/[[id]]/` with subdirectory browsing, clickable breadcrumbs, sorting, and icons.
 - Extracted `PathBreadcrumb`, `EntryTable`, `EntryTableHeader`, and `EntryRow` components.
 - Added `lucide-svelte` for UI icons and human-readable file size formatting.
 - Moved `FsEntry` and added `SortKey` enum to `$lib/types.ts`.
@@ -97,6 +111,10 @@ These are the current limitations and areas for future work:
 - Added list/grid view toggle and `EntryCard`/`FileGrid` components for the mount browser.
 - Replaced the planned per-row dropdown menu with checkbox selection and a bulk-action toolbar (`SelectionToolbar`) for simpler mobile and desktop UX.
 - Simplified the type column to "D" for directories and empty for files.
+- Introduced `AppContainer` for dependency injection and refactored `UrlHelper` into an injectable class.
+- Added a preview component registry (`ImagePreview`, `VideoPreview`, `FallbackPreview`) and `/preview/{node}/{mount}/{id}` route.
+- Replaced the native `<video>` player with **ArtPlayer**.
+- Made mount rows and file-entry rows fully clickable.
 
 ## Roadmap / Phases
 
@@ -124,7 +142,7 @@ Add a list/grid toggle for the mount browser and a selection-based file-actions 
   - `FileList` and `FileGrid` provide a select-all checkbox; selected rows/cards are highlighted.
   - The actual action handlers (open/download, rename, copy/move, delete) will be wired to backend endpoints in later phases; this phase defines only the selection shell and toolbar.
 
-### Phase 8 — Open files in the browser 🚧
+### Phase 8 — Open files in the browser ✅
 
 Clicking an image or video opens a preview viewer in the browser; other file types trigger a download.
 
@@ -156,10 +174,11 @@ Alternatives to evaluate:
 
 - **Images**
   - Provide a user-friendly viewer with zoom and basic metadata.
-  - Evaluate open-source options such as **PhotoSwipe** (touch gestures, zoom, captions) or **OpenSeadragon** (very large images / deep zoom).
+  - The current implementation uses a plain `<img>` tag.
+  - **TBD — PhotoSwipe**: evaluate/integrate PhotoSwipe for slides, zoom, touch gestures, and captions. Slide navigation requires fetching the directory listing and filtering image neighbors.
   - The agent's `GET /fs/get` already supports byte-range requests, so large images can be fetched efficiently if the viewer supports chunked loading.
 - **Video**
-  - Use **Video.js** for playback.
+  - Use **ArtPlayer** for playback (replaces the earlier **Video.js** plan).
   - Stream via `GET /fs/get` using the existing `Range: bytes=` support so large files don't need to be fully buffered in memory.
 - **General large files**
   - Reuse the agent's existing `Range` header support for any viewer or player that requests partial content.
