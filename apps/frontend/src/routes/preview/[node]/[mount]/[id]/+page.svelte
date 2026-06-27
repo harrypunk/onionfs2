@@ -7,15 +7,17 @@
 
 	const app = getAppContainer();
 
-	const nodeId = decodeURIComponent(page.params.node ?? "");
-	const mountName = decodeURIComponent(page.params.mount ?? "");
+	const nodeId = $derived(decodeURIComponent(page.params.node ?? ""));
+	const mountName = $derived(decodeURIComponent(page.params.mount ?? ""));
 	const fileId = $derived(page.params.id ?? "");
+	const agentInfo = $derived(app.nodeInfoManager.getNodeById(nodeId));
+	const nodePublicUrl = $derived(agentInfo ? agentInfo.publicUrl : "");
 
-	// Recreate the view-model whenever the id changes.
+	// Recreate the view-model whenever the id or node info changes.
 	// SvelteKit reuses this component on client-side navigation, so `onMount`
 	// alone is not enough.
 	const viewModel = $derived.by(
-		() => new PreviewViewModel(nodeId, mountName, fileId, app.nodeInfoManager),
+		() => new PreviewViewModel(mountName, fileId, nodePublicUrl),
 	);
 
 	const breadcrumbItems = $derived(
@@ -32,6 +34,10 @@
 		<PathBreadcrumb items={breadcrumbItems} />
 
 		<h1 class="title is-3">{viewModel.fileName}</h1>
+
+		{#if !agentInfo}
+			<p>agent info is empty</p>
+		{/if}
 
 		{#if viewModel.error}
 			<div class="notification is-danger">

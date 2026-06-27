@@ -1,58 +1,47 @@
 import { fileNameFromPathId } from "$lib/url-helpers";
 import { fileCategory } from "$lib/file-category";
-import type { NodeInfoMg } from "$lib/managers/NodeInfoMg.svelte";
 
 export type PreviewCategory = ReturnType<typeof fileCategory>;
 
-/** View-model for the preview page. Builds the direct agent URL once load() is
- * called with the node's publicUrl available in the injected NodeInfoMg.
- *
- * TODO: If a preview URL is opened directly before the NATS heartbeat arrives,
- * load() finds no node and the UI stays in "Loading…" forever. Re-add reactivity
- * (or a retry) here when we tackle that edge case. */
+/** View-model for the preview page. Builds the direct agent URL from the
+ * node's publicUrl and the encoded file id supplied by the route. */
 export class PreviewViewModel {
-	readonly nodeId: string;
 	readonly mountName: string;
 	readonly fileId: string;
-	readonly #nodeInfoManager: NodeInfoMg;
+	readonly nodePublicUrl: string;
 
 	directUrl = $state<string | null>(null);
 	error = $state<Error | null>(null);
 	fileName = $state("");
 	category = $derived(fileCategory(this.fileName));
 
-	constructor(
-		nodeId: string,
-		mountName: string,
-		fileId: string,
-		nodeInfoManager: NodeInfoMg,
-	) {
-		this.nodeId = nodeId;
+	constructor(mountName: string, fileId: string, publicUrl: string) {
 		this.mountName = mountName;
 		this.fileId = fileId;
-		this.#nodeInfoManager = nodeInfoManager;
+		this.nodePublicUrl = publicUrl;
 	}
 
-	/** Triggers an immediate URL build attempt.
-	 * Call from the component's $effect or onMount. */
-	updateFileUrl(): void {
-		this.error = null;
+	private isValid(): boolean {
+		return !!this.fileId && !!this.mountName && !!this.nodePublicUrl;
+	}
 
-		const decoded = fileNameFromPathId(this.fileId);
-		if (decoded.ok) {
-			this.fileName = decoded.value;
-		} else {
-			this.error = new Error(decoded.error);
+	/** Decodes the file id and builds the direct agent URL.
+	 * Only updates directUrl when all required values are present and valid. */
+	updateFileUrl(): void {
+		if (!this.isValid()) {
 			return;
 		}
 
-		const node = this.#nodeInfoManager.getNodeById(this.nodeId);
-		if (node?.publicUrl) {
-			this.#setUrl(node.publicUrl);
-		}
-	}
+		this.error = null;
+		this.directUrl = null;
 
-	#setUrl(publicUrl: string): void {
-		this.directUrl = `http://${publicUrl}/file/${encodeURIComponent(this.mountName)}/${encodeURIComponent(this.fileId)}`;
+		const decoded = fileNameFromPathId(this.fileId);
+		if (!decoded.ok) {
+			this.error = new Error(decoded.error);
+			return;
+		}
+		this.fileName = decoded.value;
+
+		this.directUrl = `http://${this.nodePublicUrl}/file/${encodeURIComponent(this.mountName)}/${encodeURIComponent(this.fileId)}`;
 	}
 }
