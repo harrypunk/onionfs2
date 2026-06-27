@@ -97,6 +97,7 @@ These are the current limitations and areas for future work:
 - **Bulk actions are UI-only** — the selection toolbar and checkboxes exist, but actions are not wired to backend endpoints.
 - **Frontend error UX is minimal** — NATS disconnections show a single error banner; no retry/back-off UI.
 - **Image viewer is basic** — the current image preview uses a plain `<img>` tag. A richer viewer with zoom/slides (e.g., PhotoSwipe) is planned but not implemented.
+- **No thumbnails or rich metadata** — files are previewed at full size. Thumbnails, image dimensions, and video duration/poster frames are not generated. A future option is a dedicated image/video processing microservice (using `sharp` for images and `ffmpeg` for videos) that subscribes to filesystem-change events and publishes metadata back to JetStream KV.
 
 ## Recent Changes
 
@@ -318,3 +319,29 @@ The existing single-target actions should accept a list of paths:
 - `EntryRow` and `EntryCard` already expose `selected`/`onToggle` props.
 - `EntryTable` already tracks the selected set and renders the bulk action bar via `SelectionToolbar`.
 - Reuse the per-file action logic from Phase 8–13 by wrapping it for bulk selection; avoid duplicating confirmation dialogs and destination pickers.
+
+## TBD — Thumbnail and metadata microservice
+
+Generate thumbnails and rich metadata asynchronously without blocking the main storeagent.
+
+### Why a separate microservice?
+
+- Image/video processing pulls in heavy native dependencies (`sharp`, `ffmpeg`) that complicate the storeagent build and deployment.
+- Processing can be CPU and memory intensive; isolating it lets the storeagent stay lightweight on low-resource nodes.
+- The same service can be scaled independently or skipped entirely on nodes that don't need thumbnails.
+
+### Suggested design
+
+- **Trigger**: filesystem-change notifications from Phase 9/10/13 (`onionfs.fs.change.{node_id}.{mount}.{path}`) or a periodic scan of directories that have been listed.
+- **Worker**: a small Bun/Node service with `sharp` for image thumbnails and `ffmpeg`/`ffprobe` for video frames and metadata.
+- **Storage**: write thumbnails to a cache directory (or object storage) and metadata to JetStream KV (`onionfs.fs.metadata.{node_id}.{mount}.{fileId}`).
+- **Frontend**: subscribe to metadata KV updates; show a placeholder icon until the thumbnail arrives.
+
+### Phased rollout
+
+1. **No thumbnails** — rely on MIME-type icons and lazy full-size previews. This is the default deployment.
+2. **Optional image thumbnails** — add the microservice with `sharp` if the operator chooses to enable it.
+3. **Optional video thumbnails/posters** — add `ffmpeg` frame extraction.
+4. **Rich metadata** — image dimensions, video duration, codecs, etc.
+
+Keep thumbnail generation opt-in so the core system remains simple and dependency-free.
