@@ -22,17 +22,15 @@
 			aria-label="Select {entry.name}"
 		/>
 	</td>
-	<td>
-		<span class="icon-text">
-			<span class="icon">
-				<Icon size={16} />
-			</span>
-			{#if entry.href}
-				<a href={entry.href}>{entry.name}</a>
-			{:else}
+	<td class="p-0">
+		<a href={entry.href} class="is-block px-4 py-3">
+			<span class="icon-text">
+				<span class="icon">
+					<Icon size={16} />
+				</span>
 				<span>{entry.name}</span>
-			{/if}
-		</span>
+			</span>
+		</a>
 	</td>
 	<td>{typeLabel(entry.type)}</td>
 	<td class="has-text-right">{formatSize(entry.size)}</td>

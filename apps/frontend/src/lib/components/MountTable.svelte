@@ -22,15 +22,17 @@
 	<tbody>
 		{#each mounts as mount (mount.name)}
 			<tr>
-				<td>
+				<td class="p-0">
 					<a
 						href={app.urlHelper.buildBrowseUrl(nodeId, mount.name)}
-						class="icon-text"
+						class="is-block px-4 py-3"
 					>
-						<span class="icon">
-							<HardDrive size={16} />
+						<span class="icon-text">
+							<span class="icon">
+								<HardDrive size={16} />
+							</span>
+							<span>{mount.name}</span>
 						</span>
-						<span>{mount.name}</span>
 					</a>
 				</td>
 			</tr>
