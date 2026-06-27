@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { getAppContainer } from "$lib/app/container";
 	import { PreviewViewModel } from "$lib/viewmodels/preview.svelte";
+
+	const app = getAppContainer();
 
 	const nodeId = decodeURIComponent(page.params.node ?? "");
 	const mountName = decodeURIComponent(page.params.mount ?? "");
@@ -10,7 +13,7 @@
 	// SvelteKit reuses this component on client-side navigation, so `onMount`
 	// alone is not enough.
 	const viewModel = $derived.by(
-		() => new PreviewViewModel(nodeId, mountName, fileId),
+		() => new PreviewViewModel(nodeId, mountName, fileId, app.nodeInfoManager),
 	);
 
 	$effect(() => {

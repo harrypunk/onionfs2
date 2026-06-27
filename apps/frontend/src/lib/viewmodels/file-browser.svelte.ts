@@ -1,11 +1,8 @@
 import { listMount } from "$lib/datasource/mount-source";
-import {
-	nodeInfoManager,
-	type NodeInfoMg,
-} from "$lib/managers/NodeInfoMg.svelte";
+import type { NodeInfoMg } from "$lib/managers/NodeInfoMg.svelte";
 import type { FsEntry } from "$lib/types";
 
-/** View-model for the file browser page. Reads node info from the shared
+/** View-model for the file browser page. Reads node info from the injected
  * manager and fetches directory entries from the agent. */
 export class FileBrowserViewModel {
 	readonly nodeId: string;
@@ -17,7 +14,12 @@ export class FileBrowserViewModel {
 	error = $state<string | null>(null);
 	isLoading = $state(true);
 
-	constructor(nodeId: string, mountName: string, dir: string) {
+	constructor(
+		nodeId: string,
+		mountName: string,
+		dir: string,
+		nodeInfoManager: NodeInfoMg,
+	) {
 		this.nodeId = nodeId;
 		this.mountName = mountName;
 		this.dir = dir;

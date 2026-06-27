@@ -2,12 +2,15 @@
 	import { onMount } from "svelte";
 	import "bulma/css/bulma.css";
 	import favicon from "$lib/assets/favicon.svg";
-	import { natsNodeDataSource } from "$lib/datasource/node-source.svelte";
+	import { AppContainer, setAppContainer } from "$lib/app/container";
+
+	const app = new AppContainer();
+	setAppContainer(app);
 
 	let { children } = $props();
 
 	onMount(() => {
-		natsNodeDataSource.start();
+		app.start();
 	});
 </script>
 

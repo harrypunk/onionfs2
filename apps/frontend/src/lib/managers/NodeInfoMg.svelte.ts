@@ -1,7 +1,4 @@
-import {
-	natsNodeDataSource,
-	type NatsNodeDataSource,
-} from "$lib/datasource/node-source.svelte";
+import type { NatsNodeDataSource } from "$lib/datasource/node-source.svelte";
 
 export class NodeInfoMg {
 	#infoMap;
@@ -18,5 +15,3 @@ export class NodeInfoMg {
 		return this.#infoMap.get(id);
 	}
 }
-
-export const nodeInfoManager = new NodeInfoMg(natsNodeDataSource);

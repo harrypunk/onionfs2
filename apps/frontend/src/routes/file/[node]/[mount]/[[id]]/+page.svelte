@@ -4,10 +4,13 @@
 	import PathBreadcrumb, {
 		type BreadcrumbItem,
 	} from "$lib/components/PathBreadcrumb.svelte";
+	import { getAppContainer } from "$lib/app/container";
 	import { FileBrowserViewModel } from "$lib/viewmodels/file-browser.svelte";
 	import { buildBrowseUrl, buildPreviewUrl } from "$lib/url-helpers";
 	import { decodePathId } from "@onionfs2/shared";
 	import type { FsEntry } from "$lib/types";
+
+	const app = getAppContainer();
 
 	const nodeId = decodeURIComponent(page.params.node ?? "");
 	const mountName = decodeURIComponent(page.params.mount ?? "");
@@ -22,7 +25,7 @@
 	// SvelteKit reuses this component on client-side navigation, so `onMount`
 	// alone is not enough.
 	const viewModel = $derived.by(
-		() => new FileBrowserViewModel(nodeId, mountName, dir),
+		() => new FileBrowserViewModel(nodeId, mountName, dir, app.nodeInfoManager),
 	);
 
 	$effect(() => {

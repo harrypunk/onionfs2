@@ -1,7 +1,6 @@
 import { type AnnounceMessage, NATS_STREAMS } from "@onionfs2/shared";
 import { AckPolicy, connect, DeliverPolicy, JSONCodec } from "nats.ws";
 import type { ConsumerMessages } from "nats.ws";
-import { natsUrl } from "$lib/config";
 import type { NodeInfo } from "$lib/types";
 import { SvelteMap } from "svelte/reactivity";
 
@@ -85,5 +84,4 @@ export class NatsNodeDataSource {
 	}
 }
 
-/** Singleton NATS datasource. Started once from the root layout. */
-export const natsNodeDataSource = new NatsNodeDataSource(natsUrl);
+

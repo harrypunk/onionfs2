@@ -1,9 +1,6 @@
-// Node list overview
-import {
-	nodeInfoManager,
-	type NodeInfoMg,
-} from "$lib/managers/NodeInfoMg.svelte";
+import type { NodeInfoMg } from "$lib/managers/NodeInfoMg.svelte";
 
+// Node list overview
 export class NodelistVM {
 	#infoMap;
 	constructor(mg: NodeInfoMg) {
@@ -14,5 +11,3 @@ export class NodelistVM {
 		return this.#infoMap;
 	}
 }
-
-export const overviewVM = new NodelistVM(nodeInfoManager);
