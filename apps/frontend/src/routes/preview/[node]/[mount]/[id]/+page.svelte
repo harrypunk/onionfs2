@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import PathBreadcrumb from "$lib/components/PathBreadcrumb.svelte";
+	import { getPreviewComponent } from "$lib/components/previews";
 	import { getAppContainer } from "$lib/app/container";
 	import { buildPreviewBreadcrumbs } from "$lib/breadcrumb-helpers";
 	import { PreviewViewModel } from "$lib/viewmodels/preview.svelte";
@@ -46,30 +47,8 @@
 		{/if}
 
 		{#if viewModel.directUrl}
-			{#if viewModel.category === "image"}
-				<figure class="image preview-container">
-					<img src={viewModel.directUrl} alt={viewModel.fileName} />
-				</figure>
-			{:else if viewModel.category === "video"}
-				<video class="preview-container" controls preload="metadata">
-					<source src={viewModel.directUrl} />
-					<p>Your browser does not support HTML5 video.</p>
-				</video>
-			{:else}
-				<div class="box has-text-centered">
-					<p class="mb-4">No preview available for this file type.</p>
-					<a class="button is-primary" href={viewModel.directUrl} download>
-						Download file
-					</a>
-				</div>
-			{/if}
+			{@const Preview = getPreviewComponent(viewModel.category)}
+			<Preview url={viewModel.directUrl} fileName={viewModel.fileName} />
 		{/if}
 	</div>
 </section>
-
-<style>
-	.preview-container {
-		max-width: 100%;
-		max-height: 80vh;
-	}
-</style>
