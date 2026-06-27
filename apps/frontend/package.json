@@ -43,6 +43,7 @@
 	},
 	"dependencies": {
 		"@onionfs2/shared": "workspace:*",
+		"artplayer": "^5.4.0",
 		"lucide-svelte": "^1.0.1",
 		"nats.ws": "^1.29.3"
 	}
