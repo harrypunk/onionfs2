@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import PathBreadcrumb from "$lib/components/PathBreadcrumb.svelte";
 	import { getAppContainer } from "$lib/app/container";
+	import { buildPreviewBreadcrumbs } from "$lib/breadcrumb-helpers";
 	import { PreviewViewModel } from "$lib/viewmodels/preview.svelte";
 
 	const app = getAppContainer();
@@ -16,6 +18,10 @@
 		() => new PreviewViewModel(nodeId, mountName, fileId, app.nodeInfoManager),
 	);
 
+	const breadcrumbItems = $derived(
+		buildPreviewBreadcrumbs(nodeId, mountName, fileId, app.urlHelper),
+	);
+
 	$effect(() => {
 		viewModel.updateFileUrl();
 	});
@@ -23,17 +29,9 @@
 
 <section class="section">
 	<div class="container">
-		<nav class="breadcrumb" aria-label="breadcrumbs">
-			<ul>
-				<li><a href="/">Nodes</a></li>
-				<li class="is-active">
-					<span aria-current="page">{viewModel.fileName}</span>
-				</li>
-			</ul>
-		</nav>
+		<PathBreadcrumb items={breadcrumbItems} />
 
 		<h1 class="title is-3">{viewModel.fileName}</h1>
-		<p class="subtitle is-5 has-text-grey">{nodeId} / {mountName}</p>
 
 		{#if viewModel.error}
 			<div class="notification is-danger">
